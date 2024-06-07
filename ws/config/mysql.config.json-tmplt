@@ -1,0 +1,8 @@
+{
+    "connectionLimit": 100,
+    "host": "ws_mysql",
+    "user": "root",
+    "password": "<PASSWORD>",  
+    "database": "ws_orderinfo",
+    "debug":  false 
+}

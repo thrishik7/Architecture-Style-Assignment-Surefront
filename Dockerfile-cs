@@ -1,0 +1,15 @@
+from openjdk:16
+ARG MYSQL_PASSWORD
+
+WORKDIR /usr/app
+COPY ms/mysql-connector-java-5.1.45-bin.jar lib/
+ENV CLASSPATH=.:lib/mysql-connector-java-5.1.45-bin.jar:${CLASSPATH}
+
+COPY ms/Configuration-tmplt.java ./
+RUN sed "s/<PASSWORD>/${MYSQL_PASSWORD}/g" < Configuration-tmplt.java > Configuration.java
+RUN rm Configuration-tmplt.java
+
+COPY ms/CreateServices.java ms/CreateServicesAI.java ./
+RUN javac *.java
+
+CMD java CreateServices

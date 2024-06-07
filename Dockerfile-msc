@@ -1,0 +1,11 @@
+from openjdk:16
+
+WORKDIR /usr/app
+
+COPY ms/Configuration-tmplt.java ./
+RUN sed "s/<PASSWORD>//g" < Configuration-tmplt.java > Configuration.java
+RUN rm Configuration-tmplt.java
+COPY ms/registry.properties ms/OrdersUI.java ms/MSClientAPI.java ms/CreateServicesAI.java ms/RetrieveServicesAI.java ./
+RUN javac *.java
+
+CMD java OrdersUI
