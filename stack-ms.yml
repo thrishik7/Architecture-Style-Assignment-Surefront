@@ -46,8 +46,7 @@ services:
       RMI_REMOTE_PORT: 1099
 
   mysql:
-    image: mysql:5
-    platform: linux/amd64
+    image: mysql:5.7
     container_name: ms_mysql
     volumes:
       - ./init-db:/docker-entrypoint-initdb.d
@@ -62,4 +61,3 @@ services:
 volumes:
   ms_db:
     external: true
-

@@ -16,8 +16,7 @@ services:
     ports:
       - 3000:3000
   mysql:
-    image: mysql:5
-    platform: linux/amd64
+    image: mysql:5.7
     container_name: ws_mysql
     volumes:
       - ./init-db:/docker-entrypoint-initdb.d
