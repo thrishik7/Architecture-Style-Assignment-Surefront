@@ -42,7 +42,7 @@ public class WSClientAPI
 	{
 		// Set up the URL and connect to the node server
 
-		String url = "http://localhost:3000/api/orders";
+		String url = "http://ws_server:3000/api/orders";
 
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();

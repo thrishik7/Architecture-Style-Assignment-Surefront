@@ -15,6 +15,8 @@ services:
       - 3000
     ports:
       - 3000:3000
+    networks:
+      - ws_default_network
   mysql:
     image: mysql:5
     platform: linux/amd64
@@ -28,6 +30,20 @@ services:
       "MYSQL_HOST": ws_mysql
     expose:
       - 3306
+    networks:
+        - ws_default_network
+  client:
+    image: ws_client
+    container_name: ws_client
+    stdin_open: true
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile-wsc
+    networks:
+      - ws_default_network
+networks:
+  ws_default_network:
 volumes:
   ws_db:
     external: true

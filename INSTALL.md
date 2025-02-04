@@ -199,16 +199,10 @@ The web-services client is a java program that consists of the following files.
 - `WSClientAPI.java` – Abstracts the underlying communication with the Node.js server from the user interface.
 - `OrdersUI.java` – Application user interface.
 
-To compile the source code, type the following:
+A client container is created when you start docker compose. To connect to it and run the client code, you should use the `exec` command:
 
 ```bash
-$ javac *.java
-```
-
-This will compile all of the source code required for the client. At this point the client is ready. To run the client, simply type:
-
-```bash
-$ java OrdersUI
+$ docker-compose -f ws.yml exec client java OrdersUI
 ```
 
 This will give you a menu and you should be able to choose options. To test everything is ok, select `1: Retrieve all orders in the order database`.

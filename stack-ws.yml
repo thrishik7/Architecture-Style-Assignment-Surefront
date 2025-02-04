@@ -27,6 +27,20 @@ services:
       "MYSQL_HOST": ws_mysql
     expose:
       - 3306
+  client:
+    image: ws_client
+    container_name: ws_client
+    stdin_open: true
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile-wsc
+    command: java OrdersUI
+
+networks:
+  default:
+    external:
+      name: ws_default
 volumes:
   ws_db:
     external: true
