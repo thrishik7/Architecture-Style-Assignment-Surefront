@@ -41,6 +41,7 @@ easy to navigate to on the command line. It’s a good idea to give it a nice sh
 - `ms` – folder: microservices system source code 
 - `ws` – folder: web-services system source code
 - `Dockerfile-ws` – file: Docker build instructions for the web-services service
+- `Dockerfile-wsc` – file: Docker build instructions for the web-services client
 - `Dockerfile-cs` –  file: Docker build instructions for the microservices service: CreateServices
 - `Dockerfile-rs` –  file: Docker build instructions for the microservices service: RetrieveServices
 - `Dockerfile-msc` –  file: Docker build instructions for the microservices service
