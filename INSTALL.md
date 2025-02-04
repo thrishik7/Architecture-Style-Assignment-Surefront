@@ -197,12 +197,6 @@ If you make any changes to the source files as part of the assignment, you shoul
 
 #### Running the web-services client
 
-To run the CLI client to make requests to interact with the web services, change into the ws folder in another terminal or shell window.
-
-```bash
-$ cd ws
-```
-
 The web-services client is a java program that consists of the following files.
 
 - `WSClientAPI.java` – Abstracts the underlying communication with the Node.js server from the user interface.
