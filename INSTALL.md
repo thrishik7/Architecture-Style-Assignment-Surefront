@@ -1,5 +1,14 @@
 # Installation and Setup
 
+## Preamble
+
+Note, because of various versioning issues take care with the following things:
+
+- There is a difference in how to set things up for Docker depending on whether you use a Mac with Apple Silicon or Windows/Linux.
+- Depending on the version of Docker that is installed on your machine the `docker-compose` command may have been changed to `docker compose` (i.e., no hyphen). 
+
+The instructions below point this out in various places, but be careful to keep these points in mind.
+
 ## Overview
 
 This assignment consists of two separate client-server systems. One system exhibits a web-services style, the other a microservices style. 
@@ -28,26 +37,26 @@ This assignment makes use of the following technologies:
 Clone this project. Since you will have to use the command window (windows) or the terminal (MacOS), put the folder somewhere where it is 
 easy to navigate to on the command line. It’s a good idea to give it a nice short name too. You should see…
 
-`init-db` – folder: contains database template file dbtemplate.sql
-`ms` – folder: microservices system source code 
-`ws` – folder: web-services system source code
-`Dockerfile-ws` – file: Docker build instructions for the web-services service
-`Dockerfile-cs` –  file: Docker build instructions for the microservices service: CreateServices
-`Dockerfile-rs` –  file: Docker build instructions for the microservices service: RetrieveServices
-`Dockerfile-msc` –  file: Docker build instructions for the microservices service
-`stack-ws.yml`, `stack-ws-mx.yml` – file: Docker compose for building and running the web-services server and database stack. (`-mx` for Apple Silicon Macs.)
-`stack-ms.yml`, `stack-ms-mx.yml` –  file: Docker compose file for building and running the microservices server and database stack. (`-mx` for Apple Silicon Macs.)
+- `init-db` – folder: contains database template file dbtemplate.sql
+- `ms` – folder: microservices system source code 
+- `ws` – folder: web-services system source code
+- `Dockerfile-ws` – file: Docker build instructions for the web-services service
+- `Dockerfile-cs` –  file: Docker build instructions for the microservices service: CreateServices
+- `Dockerfile-rs` –  file: Docker build instructions for the microservices service: RetrieveServices
+- `Dockerfile-msc` –  file: Docker build instructions for the microservices service
+- `stack-ws.yml`, `stack-ws-mx.yml` – file: Docker compose for building and running the web-services server and database stack. (`-mx` for Apple Silicon Macs.)
+- `stack-ms.yml`, `stack-ms-mx.yml` –  file: Docker compose file for building and running the microservices server and database stack. (`-mx` for Apple Silicon Macs.)
 
 For this assignment we will use Docker and Docker Compose for containerization. This should isolate your machine from having to install 
 versions of Nodejs, or MySQL. 
 
 ## Choosing the right Docker Compose file
 
-At time of writing, there was not an Apple Silicon version of the MySQL Docker container. To get around this, we have created a separate
+At time of writing, there was not an Apple Silicon version of the MySQL Docker container for the MySQL version we use. To get around this, we have created a separate
 Docker Compose file for Apple Silicon Macs. This file is named `stack-ws-mx.yml` for the web-services example and `stack-ms-mx.yml` for the microservices example.
 
 To make the instructions consistent, we will move the appropriate Docker Compose files to the correct name. Note that any changes that you make these files the Docker Compose 
-files should be updated in both versions.
+files should be updated in both versions. This is because the platform on which we test your implementation may not be the same as the platform you use.
 
 If you are using an Apple Silicon Mac, you should rename the files as follows:
 
@@ -56,7 +65,7 @@ $ mv stack-ws-mx.yml ws.yml
 $ mv stack-ms-mx.yml ms.yml
 ```
 
-If you are not using an Apple Silicon Mac, you should rename the files as follows:
+If you are **not** using an Apple Silicon Mac, you should rename the files as follows:
 
 ```bash
 $ mv stack-ws.yml ws.yml 
@@ -82,19 +91,19 @@ just with different files and directories.
 
 1. You will need to set up the password for access to MySQL containing the web-services data. To do this, you will need to edit the file: `ws.yml`. Change the following lines:
 
- ```
-   MYSQL_PASSWORD: foo
-   "MYSQL_ROOT_PASSWORD": foo
-```
-Change `foo` to be the password you want to use. 
+     ```
+       MYSQL_PASSWORD: foo
+       "MYSQL_ROOT_PASSWORD": foo
+    ```
+    Change `foo` to be the password you want to use. 
 
 2. You will need to create a place on your machine to store the database files, so that database information persists between runs. (Without this, 
 MySQL will reset the data every time you start the example.) We will do this with Docker volumes. 
 Create a Docker volume, `ws_db`, using:
 
-```bash
-$ docker volume create ws_db
-```
+    ```bash
+    $ docker volume create ws_db
+    ```
 
 To see that it has been created, it should appear when you issue the command:
 
@@ -116,16 +125,16 @@ Docker will automatically restart `ws_server` until the database finishes instal
 ### MySQL database preparation for microservices
 
 1. You will need to set up the password for access to MySQL containing the web services data. To do this, you will need to edit the file: `ms.yml`  and change the following lines:
-```
-   MYSQL_PASSSWORD: foo
-	 ”MYSQL_ROOT_PASSWORD”: foo
-```
-2. Change `foo` to be the password you want to use.
-You will need to create a place on your machine to store the database files, so that database information persists between runs. (Without this, MySQL will reset the data every time you start the example.) We will do this with Docker volumes. 
+    ```
+       MYSQL_PASSSWORD: foo
+       ”MYSQL_ROOT_PASSWORD”: foo
+    ```
+    Change `foo` to be the password you want to use.
+2. You will need to create a place on your machine to store the database files, so that database information persists between runs. (Without this, MySQL will reset the data every time you start the example.) We will do this with Docker volumes. 
 Create a Docker volume, `ms_db`, using:
-```bash
-     $ docker volume create ms_db
-```
+    ```bash
+         $ docker volume create ms_db
+    ```
 To see that it has been created, it should appear when you issue the command:
 ```bash
      $ docker volume ls
@@ -142,20 +151,19 @@ Docker will automatically restart `ms_server` until the database finishes instal
 
 ### Building and running web-services
 
-The web-services example involves two containers, the mysql container and a container running node.js that provides services. The client in this case will run on the host. To build this example, you should execute:
+The web-services example involves two containers, the mysql container, a container running node.js that provides services, and a container that contains the compiled code for the client. 
+To build this example, you should execute:
 
 ```bash
 $ docker-compose -f ws.yml build
 ```
+**Note**: You may need to use the command `docker compose` instead, both here and in the rest of the instructions for this section.
 
 This will download the necessary base containers and build the web-services container on your machine. If you are successful you should see output from the build that looks like:
 
 ```
-Successfully tagged ws_server:latest
-```
-OR
-```
-=> => naming to docker.io/library/ws_server
+✔ Service client  Built                                                                                                                                                           0.7s 
+✔ Service server  Built
 ```
 
 If you get some errors, check that you have changed the MySQL password as described above, and that you are connected to a network to be able to download containers and packages.
@@ -223,12 +231,16 @@ To build this example, you should execute:
 $ docker-compose -f ms.yml build
 ```
 
+**Note**: You may need to use the command `docker compose` instead, both here and in the rest of the instructions for this section.
+
+
 This will download the necessary base containers and build the microservices container on your machine. If you are successful you should see output from the build that looks like:
 
 ```
-Successfully tagged ms_server:latest
-	…
-	Successfully tagged ms_client:latest
+...
+ ✔ Service client    Built                                                                                                                                                         1.5s 
+ ✔ Service retrieve  Built                                                                                                                                                         1.5s 
+ ✔ Service create    Built  
 ```
 Or
 ```
@@ -343,4 +355,7 @@ mysql> describe orders;
 
 You should see the same schema as shown above for the ws_orderinfo/orders table. 
 
+## Notes on making changes
 
+Note that when you change the source code for the web-services or microservices, you will need to rebuild the containers. This can be done by using the `docker-compose ... build` command as described above.
+If you add a container to the `yml` file, you will need stop and restart the composition.
