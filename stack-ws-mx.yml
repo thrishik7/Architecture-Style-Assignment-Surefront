@@ -1,4 +1,3 @@
-version: "3.1"
 services:
   server:
     image: ws_server
@@ -16,7 +15,7 @@ services:
     ports:
       - 3000:3000
     networks:
-      - ws_default_network
+      - ws
   mysql:
     image: mysql:5
     platform: linux/amd64
@@ -31,7 +30,7 @@ services:
     expose:
       - 3306
     networks:
-        - ws_default_network
+        - ws
   client:
     image: ws_client
     container_name: ws_client
@@ -41,9 +40,9 @@ services:
       context: .
       dockerfile: Dockerfile-wsc
     networks:
-      - ws_default_network
+      - ws
 networks:
-  ws_default_network:
+  ws:
 volumes:
   ws_db:
     external: true

@@ -1,4 +1,3 @@
-version: "3.1"
 services:
   create:
     image: ms_create
@@ -15,6 +14,8 @@ services:
       RMI_REMOTE_PORT: 1099
       MYSQL_REMOTE_HOST: ms_mysql
       MYSQL_REMOTE_PORT: 3306
+    networks:
+      - ms
 
   retrieve:
     image: ms_retrieve
@@ -30,7 +31,9 @@ services:
       RMI_REMOTE_HOST: ms_retrieve
       RMI_REMOTE_PORT: 1098
       MYSQL_REMOTE_HOST: ms_mysql
-      MYSQL_REMOTE_PORT: 3306        
+      MYSQL_REMOTE_PORT: 3306
+    networks:
+      - ms
 
   client:
     image: ms_client
@@ -44,6 +47,8 @@ services:
     environment:
       RMI_REMOTE_HOST: ms_server
       RMI_REMOTE_PORT: 1099
+    networks:
+      - ms
 
   mysql:
     image: mysql:5
@@ -58,7 +63,11 @@ services:
       "MYSQL_HOST": ms_mysql
     expose:
       - 3306
+    networks:
+      - ms
 
+networks:
+  ms:
 volumes:
   ms_db:
     external: true

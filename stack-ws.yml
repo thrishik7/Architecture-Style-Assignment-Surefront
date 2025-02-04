@@ -1,4 +1,3 @@
-version: "3.1"
 services:
   server:
     image: ws_server
@@ -15,6 +14,9 @@ services:
       - 3000
     ports:
       - 3000:3000
+    networks:
+      - ws
+
   mysql:
     image: mysql:5.7
     container_name: ws_mysql
@@ -27,6 +29,9 @@ services:
       "MYSQL_HOST": ws_mysql
     expose:
       - 3306
+    networks:
+      - ws
+
   client:
     image: ws_client
     container_name: ws_client
@@ -36,11 +41,13 @@ services:
       context: .
       dockerfile: Dockerfile-wsc
     command: java OrdersUI
+    networks:
+      - ws
 
 networks:
   default:
     external:
-      name: ws_default
+      name: ws
 volumes:
   ws_db:
     external: true
