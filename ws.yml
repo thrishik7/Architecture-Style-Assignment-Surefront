@@ -24,7 +24,7 @@ services:
     container_name: ws_mysql
     volumes:
       - ./init-db:/docker-entrypoint-initdb.d
-      - ws_mdb:/var/lib/mysql
+      - ws_db:/var/lib/mysql
     environment:
       "MYSQL_ROOT_PASSWORD": foo
       "MYSQL_DATABASE": ws_orderinfo
