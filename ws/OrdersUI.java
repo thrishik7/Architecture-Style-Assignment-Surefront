@@ -57,7 +57,8 @@ public class OrdersUI
 			System.out.println( "Select an Option: \n" );
 			System.out.println( "1: Retrieve all orders in the order database." );
 			System.out.println( "2: Retrieve an order by ID." );
-			System.out.println( "3: Add a new order to the order database." );				
+			System.out.println( "3: Add a new order to the order database." );					
+			System.out.println( "4: Delete an order by ID." );
 			System.out.println( "X: Exit\n" );
 			System.out.print( "\n>>>> " );
 			option = keyboard.next().charAt(0);	
@@ -186,6 +187,48 @@ public class OrdersUI
 				c.readLine();
 
 				option = ' '; //Clearing option. This incase the user enterd X/x the program will not exit.
+
+			} // if
+
+			//////////// option 2 ////////////
+
+			if ( option == '4' )
+			{
+				// Here we get the order ID from the user
+
+				error = true;
+
+				while (error)
+				{
+					System.out.print( "\nEnter the order ID: " );
+					orderid = keyboard.nextLine();
+
+					try
+					{
+						Integer.parseInt(orderid);
+						error = false;
+					} catch (NumberFormatException e) {
+
+						System.out.println( "Not a number, please try again..." );
+						System.out.println("\nPress enter to continue..." );
+
+					} // if
+
+				} // while
+
+				try
+				{
+					response = api.deleteOrders(orderid);
+					System.out.println(response);
+
+				} catch (Exception e) {
+
+					System.out.println("Request failed:: " + e);
+					
+				}
+
+				System.out.println("\nPress enter to continue..." );
+				c.readLine();
 
 			} // if
 
