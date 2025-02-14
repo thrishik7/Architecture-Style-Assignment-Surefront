@@ -1,6 +1,5 @@
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.rmi.RemoteException; 
 
 public interface MySqlConstants {
 	public static final String MYSQL_PASSWORD="<PASSWORD>";

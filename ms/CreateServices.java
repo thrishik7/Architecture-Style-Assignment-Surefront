@@ -22,6 +22,7 @@
 import java.rmi.RemoteException; 
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.registry.Registry;
+import ms.Configuration;
 import java.sql.*;
 
 public class CreateServices extends UnicastRemoteObject implements CreateServicesAI

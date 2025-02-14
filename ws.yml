@@ -24,7 +24,7 @@ services:
     container_name: ws_mysql
     volumes:
       - ./init-db:/docker-entrypoint-initdb.d
-      - ws_db:/var/lib/mysql
+      - ws_mdb:/var/lib/mysql
     environment:
       "MYSQL_ROOT_PASSWORD": foo
       "MYSQL_DATABASE": ws_orderinfo
@@ -35,6 +35,7 @@ services:
         - ws
   client:
     image: ws_client
+    restart: always
     container_name: ws_client
     stdin_open: true
     tty: true
