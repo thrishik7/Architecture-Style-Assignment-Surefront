@@ -1,4 +1,8 @@
-public interface Configuration {
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.RemoteException; 
+
+public interface MySqlConstants {
 	public static final String MYSQL_PASSWORD="<PASSWORD>";
 
 	static String getRemoteHost() {
@@ -19,11 +23,22 @@ public interface Configuration {
 		return Integer.valueOf(port);
 	}
 
-	static String getRegistry() {
-		Registry registry = LocateRegistry.getRegistry(MySqlConstants.getRemoteHost(), 1099);
-        if (registry == null) {
-            registry = LocateRegistry.createRegistry(1099);
-        }
+	static Registry getRegistry() {
+		Registry registry = null;
+		try {
+			registry = LocateRegistry.getRegistry(MySqlConstants.getRemoteHost(), 1099);
+		} catch (Exception e) {
+			System.out.println("Execption occured on locate registry " + e.getMessage());
+		}
+
+		try {
+			if (registry == null) {
+				registry = LocateRegistry.createRegistry(1099);
+			}
+		} catch (Exception e) {
+			System.out.println("Execption occured on locate registry " + e.getMessage());
+		}
+        
         return registry;
 	}
 

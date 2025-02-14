@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   create:
     image: ms_create
