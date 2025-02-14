@@ -59,16 +59,59 @@ REST.prototype.connectMysql = function() {
 
 // Here is where we configure express and the body parser so the server
 // process can get parsed URLs. You really shouldn't have to tinker with this.
-
 REST.prototype.configureExpress = function(connection) {
-      var self = this;
-      app.use(bodyParser.urlencoded({ extended: true }));
-      app.use(bodyParser.json());
-      app.use(bodyParser.text());
-      var router = express.Router();
-      app.use('/api', router);
-      var rest_router = new rest(router,connection);
-      self.startServer();
+    var self = this;
+    app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(bodyParser.json());
+    app.use(bodyParser.text());
+
+    let logBuffer = [];
+    const MAX_LOGS = 1;
+
+    const middleware = (req, res, next) => {
+        // Add log entry to buffer
+        logBuffer.push({
+            timestamp: new Date(),
+            ip: req.ip,
+            api: req.path,
+            uuid: req.headers['x-request-id'],
+            meta_data: JSON.stringify(req.body),
+            status: 'pending'
+        });
+
+        // If buffer reaches 1000 logs, bulk insert to database
+        if (logBuffer.length >= MAX_LOGS) {
+            const logsToInsert = logBuffer;
+            logBuffer = []; // Reset buffer
+
+            // Bulk insert logs
+            const sql = 'INSERT INTO logger (timestamp, ip, api, uuid, meta_data, status) VALUES ?';
+            const values = logsToInsert.map(log => [
+                log.timestamp,
+                log.ip,
+                log.api, 
+                log.uuid,
+                log.meta_data,
+                log.status
+            ]);
+
+            connection.query(sql, [values], function(err) {
+                if (err) console.error('Error bulk inserting logs:', err);
+            });
+        }
+
+        console.log("Middleware intercepted request:", req.body);
+        next();
+    };
+
+    var router = express.Router();
+    app.use('/api', [middleware, router], (req, res) => {
+        console.log("Final Server Handler received:", req.body);
+        res.json({ response: "Processed by Server", receivedData: req.body });
+    });
+    
+    var rest_router = new rest(router,connection);
+    self.startServer();
 }
 
 // If we get here, we are ready to start the server. Basically a listen() on 
