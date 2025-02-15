@@ -32,6 +32,12 @@ import java.nio.charset.StandardCharsets;
 
 public class WSClientAPI
 {
+	private String userId;
+
+	public WSClientAPI(String userId) {
+		this.userId = userId;
+	}
+
 	/********************************************************************************
 	* Description: Gets and returns all the orders in the orderinfo database
 	* Parameters: None
@@ -46,6 +52,8 @@ public class WSClientAPI
 
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+		addUserIdHeader(con);
 
 		//Form the request header and instantiate the response code
 		con.setRequestMethod("GET");
@@ -84,6 +92,8 @@ public class WSClientAPI
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
+		addUserIdHeader(con);
+
 		//Form the request header and instantiate the response code
 		con.setRequestMethod("GET");
 		int responseCode = con.getResponseCode();
@@ -117,6 +127,8 @@ public class WSClientAPI
 		// Set up the URL and connect to the node server		
 		URL url = new URL("http://ws_server:3000/api/orders");
 		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+		addUserIdHeader(conn);
 
 		// The POST parameters
 		String input = "order_date="+Date+"&first_name="+FirstName+"&last_name="+LastName+"&address="+Address+"&phone="+Phone;
@@ -172,6 +184,8 @@ public class WSClientAPI
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
+		addUserIdHeader(con);
+
 		//Form the request header and instantiate the response code
 		con.setRequestMethod("DELETE");
 		int responseCode = con.getResponseCode();
@@ -193,4 +207,107 @@ public class WSClientAPI
 		return(response.toString());
 
 	}
+
+	/********************************************************************************
+	* Description: Posts the new order to the orderinfo database
+	* Parameters: None
+	* Returns: String that contains the status of the POST operation
+	********************************************************************************/
+
+   	public String newUser(String username, String password) throws Exception
+	{
+		// Set up the URL and connect to the node server		
+		URL url = new URL("http://ws_server:3000/api/users/register");
+		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+		// The POST parameters
+		String input = "username="+username+"&password="+password;
+
+		//Configure the POST connection for the parameters
+		conn.setRequestMethod("POST");
+        conn.setRequestProperty("Accept-Language", "en-GB,en;q=0.5");
+        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        conn.setRequestProperty("Content-length", Integer.toString(input.length()));
+        conn.setRequestProperty("Content-Language", "en-GB");
+        conn.setRequestProperty("charset", "utf-8");
+        conn.setUseCaches(false);
+        conn.setDoOutput(true);
+
+        // Set up a stream and write the parameters to the server
+		OutputStream os = conn.getOutputStream();
+		os.write(input.getBytes());
+		os.flush();
+
+		//Loop through the input and build the response string.
+		//When done, close the stream.	
+		BufferedReader in = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+		String inputLine;		
+		StringBuffer response = new StringBuffer();
+
+		//Loop through the input and build the response string.
+		//When done, close the stream.		
+
+		while ((inputLine = in.readLine()) != null) 
+		{
+			response.append(inputLine);
+		}
+		
+		in.close();
+		conn.disconnect();
+
+		return(response.toString());
+		
+    } // newUser
+
+    public String loginUser(String username, String password) throws Exception {
+        URL url = new URL("http://ws_server:3000/api/users/login");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+        String input = "username="+username+"&password="+password;
+
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Accept-Language", "en-GB,en;q=0.5");
+        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        conn.setRequestProperty("Content-length", Integer.toString(input.length()));
+        conn.setRequestProperty("Content-Language", "en-GB");
+        conn.setRequestProperty("charset", "utf-8");
+        conn.setUseCaches(false);
+        conn.setDoOutput(true);
+
+        OutputStream os = conn.getOutputStream();
+        os.write(input.getBytes());
+        os.flush();
+
+        // Check response code first
+        int responseCode = conn.getResponseCode();
+        if (responseCode != 200) {
+            BufferedReader errorReader = new BufferedReader(new InputStreamReader((conn.getErrorStream())));
+            StringBuffer errorResponse = new StringBuffer();
+            String line;
+            while ((line = errorReader.readLine()) != null) {
+                errorResponse.append(line);
+            }
+            errorReader.close();
+            conn.disconnect();
+            return errorResponse.toString();
+        }
+
+        BufferedReader in = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+        String inputLine;        
+        StringBuffer response = new StringBuffer();
+
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        
+        in.close();
+        conn.disconnect();
+        return response.toString();
+    }
+
+    private void addUserIdHeader(HttpURLConnection conn) {
+        if (userId != null) {
+            conn.setRequestProperty("X-User-ID", userId);
+        }
+    }
 } // WSClientAPI

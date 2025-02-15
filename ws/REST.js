@@ -1,4 +1,3 @@
-
 /******************************************************************************************************************
 * File:REST.js
 * Course: 17655
@@ -90,7 +89,6 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection) {
         var query = "DELETE FROM ?? WHERE ??=?";
         var table = ["orders","order_id",req.params.order_id];
         query = mysql.format(query,table);
-        console.log(query);
         connection.query(query,function(err,rows){
             if(err) {
                 res.json({"Error" : true, "Message" : "Error executing MySQL query"});
@@ -105,8 +103,6 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection) {
     // res parameter is the response object 
   
     router.post("/orders",function(req,res){
-        //console.log("url:", req.url);
-        //console.log("body:", req.body);
         console.log("Adding to orders table ", req.body.order_date,",",req.body.first_name,",",req.body.last_name,",",req.body.address,",",req.body.phone);
         var query = "INSERT INTO ??(??,??,??,??,??) VALUES (?,?,?,?,?)";
         var table = ["orders","order_date","first_name","last_name","address","phone",req.body.order_date,req.body.first_name,req.body.last_name,req.body.address,req.body.phone];
@@ -120,6 +116,41 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection) {
         });
     });
 
+    router.post("/users/register",function(req,res){
+        console.log("Adding to users table ", req.body.username,",",req.body.password);
+        var query = "INSERT INTO ??(??,??) VALUES (?,?)";
+        var table = ["users","username","password",req.body.username,req.body.password];
+        query = mysql.format(query,table);
+        connection.query(query,function(err,rows){
+            if(err) {
+                res.json({"Error" : true, "Message" : "Error executing MySQL query"});
+            } else {
+                res.json({"Error" : false, "Message" : "User Added !"});
+            }
+        });
+    });
+
+    // login
+    router.post("/users/login",function(req,res){
+        console.log("Logging in user ", req.body.username,",",req.body.password);
+        var query = "SELECT * FROM ?? WHERE ??=? AND ??=?";
+        var table = ["users","username",req.body.username,"password",req.body.password];
+        query = mysql.format(query,table);
+        connection.query(query,function(err,rows){
+            if(err) {
+                res.json({"Error" : true, "Message" : "Error executing MySQL query"});
+            } else {
+                if (rows.length > 0) {
+                    res.json({
+                        "Message": "Login successful",
+                        "user_id": rows[0].id.toString()
+                    });
+                } else {
+                    res.json({"Error" : true, "Message" : "Invalid username or password"});
+                }
+            }
+        });
+    });
 }
 
 // The next line just makes this module available... think of it as a kind package statement in Java

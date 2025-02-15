@@ -22,12 +22,117 @@
 import java.util.Scanner;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.io.Console;
+import java.io.Console;	
 
 public class OrdersUI
 {
 	public static void main(String args[])
 	{
+		boolean done = false;						// main loop flag
+		char    option;								// Menu choice from user
+		String 	response = null;					// response string from REST 
+		Scanner keyboard = new Scanner(System.in);	// keyboard scanner object for user input
+		WSClientAPI api = new WSClientAPI(null);	// RESTful api object
+		String username = null;    // Add username declaration
+		String password = null;    // Add password declaration
+		Console c = System.console();				// Press any key
+
+		/////////////////////////////////////////////////////////////////////////////////
+		// Main UI loop
+		/////////////////////////////////////////////////////////////////////////////////
+
+		while (!done) {
+			System.out.println( "1: Register as a new user" );
+			System.out.println( "2: Login as an existing user" );
+			System.out.println( "X: Exit\n" );
+			System.out.print( "\n>>>> " );
+			option = keyboard.next().charAt(0);
+			keyboard.nextLine();
+
+			if ( option == '1' )
+			{
+				// Here we create a new order entry in the database
+				System.out.println("Enter username:");
+				username = keyboard.nextLine();
+
+				System.out.println("Enter password:");
+				password = keyboard.nextLine();
+
+				System.out.println("Creating the following order:");
+				System.out.println("==============================");
+				System.out.println(" Username:" + username);		
+				System.out.println(" Password:" + password);
+				System.out.println("==============================");					
+				System.out.println("\nPress 'y' to create this user:");
+
+				option = keyboard.next().charAt(0);
+
+				if (( option == 'y') || (option == 'Y'))
+				{
+					try
+					{
+						System.out.println("\nCreating user...");
+						response = api.newUser(username, password);
+						System.out.println(response);
+
+					} catch(Exception e) {
+
+						System.out.println("Request failed:: " + e);
+
+					}
+
+				} else {
+
+					System.out.println("\nUser not created...");
+				}
+
+				System.out.println("\nPress enter to continue..." );
+				c.readLine();
+
+				option = ' '; //Clearing option. This incase the user enterd X/x the program will not exit.
+
+			} // if
+
+			if ( option == '2' )
+			{
+				System.out.println("Enter username:");
+				username = keyboard.nextLine();
+
+				System.out.println("Enter password:");
+				password = keyboard.nextLine();
+
+				System.out.println("Logging in with:");
+				System.out.println("==============================");
+				System.out.println(" Username:" + username);        
+				System.out.println(" Password:" + password);
+				System.out.println("==============================");                    
+
+				try {
+					System.out.println("\nLogging in...");
+					response = api.loginUser(username, password);
+					if (response.contains("Error")) {
+						System.out.println("Error: " + response);
+					} else {
+						String userId = response.split("\"user_id\":\"")[1].split("\"")[0];
+						loggedInLoop(userId);
+					}
+				} catch(Exception e) {
+					System.out.println("Request failed:: " + e);
+				}
+
+				System.out.println("\nPress enter to continue..." );
+				c.readLine();
+			}
+
+			if ((option == 'X') || (option == 'x')) {
+				done = true;
+				System.out.println("\nGoodbye!\n");
+			}
+		}
+
+  	} // main
+
+	public static void loggedInLoop(String userId) {
 		boolean done = false;						// main loop flag
 		boolean error = false;						// error flag
 		char    option;								// Menu choice from user
@@ -42,12 +147,11 @@ public class OrdersUI
 		Scanner keyboard = new Scanner(System.in);	// keyboard scanner object for user input
 		DateTimeFormatter dtf = null;				// Date object formatter
 		LocalDate localDate = null;					// Date object
-		WSClientAPI api = new WSClientAPI();	// RESTful api object
+		WSClientAPI api = new WSClientAPI(userId);	// RESTful api object
 
 		/////////////////////////////////////////////////////////////////////////////////
 		// Main UI loop
 		/////////////////////////////////////////////////////////////////////////////////
-
 		while (!done)
 		{	
 			// Here, is the main menu set of choices
@@ -57,9 +161,8 @@ public class OrdersUI
 			System.out.println( "Select an Option: \n" );
 			System.out.println( "1: Retrieve all orders in the order database." );
 			System.out.println( "2: Retrieve an order by ID." );
-			System.out.println( "3: Add a new order to the order database." );					
+			System.out.println( "3: Add a new order to the order database." );
 			System.out.println( "4: Delete an order by ID." );
-			System.out.println( "X: Exit\n" );
 			System.out.print( "\n>>>> " );
 			option = keyboard.next().charAt(0);	
 			keyboard.nextLine();	// Removes data from keyboard buffer. If you don't clear the buffer, you blow 
@@ -190,7 +293,7 @@ public class OrdersUI
 
 			} // if
 
-			//////////// option 2 ////////////
+			//////////// option 4 ////////////
 
 			if ( option == '4' )
 			{
@@ -244,7 +347,5 @@ public class OrdersUI
 			} // if
 
 		} // while
-
-  	} // main
-
+	}
 } // OrdersUI

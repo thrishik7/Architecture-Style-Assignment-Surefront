@@ -1,4 +1,3 @@
-
 /******************************************************************************************************************
 * File: Server.js
 * Course: 17655
@@ -29,11 +28,77 @@ var express = require("express");             //express is a Node.js web applica
 var mysql   = require("mysql");               //Database
 var bodyParser  = require("body-parser");     //Javascript parser utility
 var rest = require("./REST.js");              //REST services/handler module
-var app  = express();                         //express instance
+var app  = express();    
+
+const fs = require('fs');
+const path = require('path');
+
+// Create Logger class
+function Logger() {
+    // Create logs directory if it doesn't exist
+    const logsDir = path.join('.', 'logs');
+    if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir);
+        console.log("Logs directory created at:", logsDir);
+    }
+    
+    this.logPath = path.join(logsDir, 'log.txt');
+    
+    // Create log file if it doesn't exist
+    if (!fs.existsSync(this.logPath)) {
+        fs.writeFileSync(this.logPath, '', 'utf8');
+        console.log("Log file created at:", this.logPath);
+    }
+    
+    console.log("Logger Initialized with path:", this.logPath);
+}
+
+// Add methods to prototype
+Logger.prototype.logRequest = function(req) {
+    console.log("Logging Request");
+    const userId = req.headers['x-user-id'] || 'anonymous';
+    const logEntry = {
+        timestamp: new Date(),
+        ip: req.ip,
+        api: req.path,
+        uuid: userId,
+        meta_data: JSON.stringify(req.body),
+        status: 'pending'
+    };
+
+    this.writeToLog(logEntry);
+};
+
+Logger.prototype.logResponse = function(req, status) {
+    console.log("Logging Response");
+    const userId = req.headers['x-user-id'] || 'anonymous';
+    const logStatus = {
+        timestamp: new Date(),
+        ip: req.ip,
+        api: req.path,
+        uuid: userId,
+        meta_data: JSON.stringify(req.body),
+        status: status
+    };
+
+    this.writeToLog(logStatus);
+};
+
+Logger.prototype.writeToLog = function(data) {
+    console.log("Writing to log");
+    fs.appendFile(
+        this.logPath,
+        JSON.stringify(data) + '\n',
+        (err) => {
+            if (err) console.error('Error writing to log file:', err);
+        }
+    );
+};
 
 // Function definition
 function REST(){
     var self = this;
+    console.log('Initializing REST...'); // Debug log
     self.connectMysql();
 };
 
@@ -65,51 +130,23 @@ REST.prototype.configureExpress = function(connection) {
     app.use(bodyParser.json());
     app.use(bodyParser.text());
 
-    let logBuffer = [];
-    const MAX_LOGS = 1;
+    // Create a logger instance
+    const logger = new Logger();
 
     const middleware = (req, res, next) => {
-        // Add log entry to buffer
-        logBuffer.push({
-            timestamp: new Date(),
-            ip: req.ip,
-            api: req.path,
-            uuid: req.headers['x-request-id'],
-            meta_data: JSON.stringify(req.body),
-            status: 'pending'
-        });
-
-        // If buffer reaches 1000 logs, bulk insert to database
-        if (logBuffer.length >= MAX_LOGS) {
-            const logsToInsert = logBuffer;
-            logBuffer = []; // Reset buffer
-
-            // Bulk insert logs
-            const sql = 'INSERT INTO logger (timestamp, ip, api, uuid, meta_data, status) VALUES ?';
-            const values = logsToInsert.map(log => [
-                log.timestamp,
-                log.ip,
-                log.api, 
-                log.uuid,
-                log.meta_data,
-                log.status
-            ]);
-
-            connection.query(sql, [values], function(err) {
-                if (err) console.error('Error bulk inserting logs:', err);
-            });
-        }
-
-        console.log("Middleware intercepted request:", req.body);
+        console.log("Middleware Intercepted");
+        logger.logRequest(req);
+        const originalSend = res.send;
+        res.send = function(...args) {
+            console.log("Response sent with status:", res.statusCode);
+            logger.logResponse(req, res.statusCode);
+            originalSend.apply(res, args);
+        };
         next();
     };
 
     var router = express.Router();
-    app.use('/api', [middleware, router], (req, res) => {
-        console.log("Final Server Handler received:", req.body);
-        res.json({ response: "Processed by Server", receivedData: req.body });
-    });
-    
+    app.use('/api', [middleware, router]);
     var rest_router = new rest(router,connection);
     self.startServer();
 }
