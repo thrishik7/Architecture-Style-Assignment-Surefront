@@ -106,4 +106,13 @@ public class MSClientAPI
            return(response);	
     }
 
+	// public String authCreateUser(String username, String password) throws Exception {
+	// 	String entry = registry.getProperty("AuthServices");
+	// 	String host = entry.split(":")[0];
+	// 	int port = Integer.parseInt(entry.split(":")[1]);
+	// 	Registry reg = LocateRegistry.getRegistry(host, port);
+	// 	AuthServicesAI authService = (AuthServicesAI) reg.lookup("AuthServices");
+	// 	return authService.createUser(username, password);
+	// }
+
 }
