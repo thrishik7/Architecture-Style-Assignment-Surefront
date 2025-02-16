@@ -90,7 +90,7 @@ public class AuthServices extends UnicastRemoteObject implements AuthServicesAI 
             try { if (ps != null) ps.close(); } catch (Exception ignore){}
             try { if (conn != null) conn.close(); } catch (Exception ignore){}
         }
-        return "";
+        return "ERROR: Something went wrong";
     }
 
     @Override
