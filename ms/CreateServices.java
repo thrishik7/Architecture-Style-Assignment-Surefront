@@ -72,52 +72,41 @@ public class CreateServices extends UnicastRemoteObject implements CreateService
 
     // This method add the entry into the ms_orderinfo database
 
-    public String newOrder(String idate, String ifirst, String ilast, String iaddress, String iphone) throws RemoteException
-    {
-      	// Local declarations
+    public String newOrder(String sessionToken, String idate, String ifirst, String ilast,
+                       String iaddress, String iphone) throws RemoteException {
+    // 1) Check that the user is authenticated
+    if (!AuthUtils.isAuthenticated(sessionToken)) {
+        logAction("UNKNOWN", "newOrder", "AUTH FAIL");
+        return "ERROR: Not Authenticated.";
+    }
 
-        Connection conn = null;		                 // connection to the orderinfo database
-        Statement stmt = null;		                 // A Statement object is an interface that represents a SQL statement.
-        String ReturnString = "Order Created";	     // Return string. If everything works you get an 'OK' message
-        							                 // if not you get an error string
-        try
-        {
-            // Here we load and initialize the JDBC connector. Essentially a static class
-            // that is used to provide access to the database from inside this class.
+    Connection conn = null;
+    Statement stmt = null;
 
-            Class.forName(JDBC_CONNECTOR);
+    try {
+        Class.forName(JDBC_CONNECTOR);
+        conn = DriverManager.getConnection(DB_URL,USER,PASS);
+        stmt = conn.createStatement();
 
-            //Open the connection to the orderinfo database
+        String sql = "INSERT INTO orders(order_date, first_name, last_name, address, phone) "
+                   + "VALUES ('"+idate+"','"+ifirst+"','"+ilast+"','"+iaddress+"','"+iphone+"')";
+        stmt.executeUpdate(sql);
 
-            //System.out.println("Connecting to database...");
-            conn = DriverManager.getConnection(DB_URL,USER,PASS);
+        String username = AuthUtils.getUsername(sessionToken);
+        logAction(username, "newOrder", "SUCCESS");
 
-            // Here we create the queery Execute a query. Not that the Statement class is part
-            // of the Java.rmi.* package that enables you to submit SQL queries to the database
-            // that we are connected to (via JDBC in this case).
+        return "Order Created Successfully";
+    } catch(Exception e) {
+        logAction("UNKNOWN", "newOrder", "ERROR: " + e.getMessage());
+        return "ERROR: " + e.getMessage();
+    } finally {
+        try { if (stmt != null) stmt.close(); } catch (Exception ignore){}
+        try { if (conn != null) conn.close(); } catch (Exception ignore){}
+    }
+}
 
-            stmt = conn.createStatement();
-            
-            String sql = "INSERT INTO orders(order_date, first_name, last_name, address, phone) VALUES (\""+idate+"\",\""+ifirst+"\",\""+ilast+"\",\""+iaddress+"\",\""+iphone+"\")";
-
-            // execute the update
-
-            stmt.executeUpdate(sql);
-
-            // clean up the environment
-
-            stmt.close();
-            conn.close();
-            stmt.close(); 
-            conn.close();
-
-        } catch(Exception e) {
-
-            ReturnString = e.toString();
-        } 
-        
-        return(ReturnString);
-
-    } //retrieve all orders
+private void logAction(String user, String operation, String status) {
+    Logger.log(user, "CreateServices", operation, status);
+}
 
 } // RetrieveServices

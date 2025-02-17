@@ -1,208 +1,275 @@
-/******************************************************************************************************************
-* File:OrdersUI.java
-* Course: 17655
-* Project: Assignment A3
-* Copyright: Copyright (c) 2018 Carnegie Mellon University
-* Versions:
-*	1.0 February 2018 - Initial write of assignment 3 (ajl).
-*
-* Description: This class is the console for the an orders database. This interface uses a webservices or microservice
-* client class to update the ms_orderinfo MySQL database. 
-*
-* Parameters: None
-*
-* Internal Methods: None
-*
-* External Dependencies (one of the following):
-*	- MSlientAPI - this class provides an interface to a set of microservices
-*	- RetrieveServices - this is the server-side micro service for retrieving info from the ms_orders database
-*	- CreateServices - this is the server-side micro service for creating new orders in the ms_orders database
-*
-******************************************************************************************************************/
-import java.lang.Exception;
-import java.util.Scanner;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.io.Console;
+import java.rmi.RemoteException;
+import java.util.Scanner;
 
-public class OrdersUI
-{
-	public static void main(String args[]) throws Exception
-	{
-		boolean done = false;						// main loop flag
-		boolean error = false;						// error flag
-		char    option;								// Menu choice from user
-		Console c = System.console();				// Press any key
-		String  date = null;						// order date
-		String  first = null;						// customer first name
-		String  last = null;						// customer last name
-		String  address = null;						// customer address
-		String  phone = null;						// customer phone number
-		String  orderid = null;						// order ID
-		String 	response = null;					// response string from REST 
-		Scanner keyboard = new Scanner(System.in);	// keyboard scanner object for user input
-		DateTimeFormatter dtf = null;				// Date object formatter
-		LocalDate localDate = null;					// Date object
-		MSClientAPI api = new MSClientAPI();	// RESTful api object
+/**
+ * OrdersUI is the main console-based user interface for the microservices system.
+ * It uses MSClientAPI to access the AuthServices, CreateServices, RetrieveServices,
+ * and DeleteServices via RMI.
+ */
+public class OrdersUI {
 
-		/////////////////////////////////////////////////////////////////////////////////
-		// Main UI loop
-		/////////////////////////////////////////////////////////////////////////////////
+    private static Scanner keyboard = new Scanner(System.in);
+    private static Console console = System.console();  // might be null in some IDEs
+    private static MSClientAPI api;
+    // sessionToken is null if user is not logged in
+    private static String sessionToken = null; 
 
-		while (!done)
-		{	
-			// Here, is the main menu set of choices
+    public static void main(String[] args) {
+        try {
+            // Initialize the MSClientAPI which reads from registry.properties
+            api = new MSClientAPI();
+        } catch (Exception e) {
+            System.out.println("Failed to initialize MSClientAPI: " + e);
+            return;
+        }
 
-			System.out.println( "\n\n\n\n" );
-			System.out.println( "Orders Database User Interface: \n" );
-			System.out.println( "Select an Option: \n" );
-			System.out.println( "1: Retrieve all orders in the order database." );
-			System.out.println( "2: Retrieve an order by ID." );
-			System.out.println( "3: Add a new order to the order database." );				
-			System.out.println( "X: Exit\n" );
-			System.out.print( "\n>>>> " );
-			option = keyboard.next().charAt(0);	
-			keyboard.nextLine();	// Removes data from keyboard buffer. If you don't clear the buffer, you blow 
-									// through the next call to nextLine()
+        boolean done = false;
 
-			//////////// option 1 ////////////
+        while (!done) {
+            // If not logged in, show only registration/login options
+            if (sessionToken == null) {
+                System.out.println("\nYou are currently NOT logged in!");
+                System.out.println("1: Register new user");
+                System.out.println("2: Login");
+                System.out.println("X: Exit\n");
+                System.out.print("Enter choice -> ");
 
-			if ( option == '1' )
-			{
-				// Here we retrieve all the orders in the ms_orderinfo database
+                char choice = readChar();
+                switch (choice) {
+                    case '1':
+                        registerUser();
+                        break;
+                    case '2':
+                        loginUser();
+                        break;
+                    case 'x':
+                    case 'X':
+                        done = true;
+                        break;
+                    default:
+                        System.out.println("Unknown option. Try again.");
+                }
+            }
+            // If logged in, show main order menu
+            else {
+                System.out.println("\nOrders Database (Microservices) -- Logged In");
+                System.out.println("1: Retrieve all orders");
+                System.out.println("2: Retrieve an order by ID");
+                System.out.println("3: Create a new order");
+                System.out.println("4: Delete an order by ID");
+                System.out.println("L: Logout");
+                System.out.println("X: Exit");
+                System.out.print("Enter choice -> ");
 
-				System.out.println( "\nRetrieving All Orders::" );
-				try
-				{
-					response = api.retrieveOrders();
-					System.out.println(response);
+                char choice = readChar();
+                switch (choice) {
+                    case '1':
+                        retrieveAllOrders();
+                        break;
+                    case '2':
+                        retrieveOrderById();
+                        break;
+                    case '3':
+                        createOrder();
+                        break;
+                    case '4':
+                        deleteOrder();
+                        break;
+                    case 'l':
+                    case 'L':
+                        logoutUser();
+                        break;
+                    case 'x':
+                    case 'X':
+                        done = true;
+                        break;
+                    default:
+                        System.out.println("Unknown option. Try again.");
+                }
+            }
+        }
 
-				} catch (Exception e) {
+        System.out.println("\nExiting OrdersUI... Goodbye.");
+    }
 
-					System.out.println("Request failed:: " + e);
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //                      AUTHENTICATION METHODS
+    ///////////////////////////////////////////////////////////////////////////////////////
 
-				}
+    private static void registerUser() {
+        System.out.println("\n--- Register New User ---");
+        System.out.print("Enter desired username: ");
+        String username = keyboard.nextLine();
+        System.out.print("Enter desired password: ");
+        String password = keyboard.nextLine();
 
-				System.out.println("\nPress enter to continue..." );
-				c.readLine();
+        try {
+            String result = api.authCreateUser(username, password);
+            System.out.println("Server response: " + result);
+        } catch (Exception e) {
+            System.out.println("Error registering user: " + e);
+        }
 
-			} // if
+        promptContinue();
+    }
 
-			//////////// option 2 ////////////
+    private static void loginUser() {
+        System.out.println("\n--- Login ---");
+        System.out.print("Username: ");
+        String username = keyboard.nextLine();
+        System.out.print("Password: ");
+        String password = keyboard.nextLine();
 
-			if ( option == '2' )
-			{
-				// Here we get the order ID from the user
+        try {
+            // Attempt to login and retrieve a session token
+            String token = api.authLoginUser(username, password);
+            if (token.startsWith("ERROR")) {
+                System.out.println("Login failed: " + token);
+            } else {
+                sessionToken = token;
+                System.out.println("Login successful! Token: " + sessionToken);
+            }
+        } catch (Exception e) {
+            System.out.println("Error logging in: " + e);
+        }
 
-				error = true;
+        promptContinue();
+    }
 
-				while (error)
-				{
-					System.out.print( "\nEnter the order ID: " );
-					orderid = keyboard.nextLine();
+    private static void logoutUser() {
+        System.out.println("\n--- Logout ---");
+        if (sessionToken == null) {
+            System.out.println("You are not logged in!");
+        } else {
+            try {
+                String resp = api.authLogoutUser(sessionToken);
+                System.out.println("Logout response: " + resp);
+                sessionToken = null; // remove local token
+            } catch (Exception e) {
+                System.out.println("Error logging out: " + e);
+            }
+        }
 
-					try
-					{
-						Integer.parseInt(orderid);
-						error = false;
-					} catch (NumberFormatException e) {
+        promptContinue();
+    }
 
-						System.out.println( "Not a number, please try again..." );
-						System.out.println("\nPress enter to continue..." );
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //                      ORDER OPERATIONS
+    ///////////////////////////////////////////////////////////////////////////////////////
 
-					} // if
+    private static void retrieveAllOrders() {
+        System.out.println("\n--- Retrieve All Orders ---");
+        try {
+            // The retrieveOrders method in the microservices now should require a token
+            String result = api.retrieveOrders(sessionToken);
+            System.out.println("Orders: " + result);
+        } catch (Exception e) {
+            System.out.println("Error retrieving orders: " + e);
+        }
 
-				} // while
+        promptContinue();
+    }
 
-				try
-				{
-					response = api.retrieveOrders(orderid);
-					System.out.println(response);
+    private static void retrieveOrderById() {
+        System.out.println("\n--- Retrieve Order by ID ---");
+        System.out.print("Enter Order ID: ");
+        String id = keyboard.nextLine();
 
-				} catch (Exception e) {
+        try {
+            String result = api.retrieveOrders(sessionToken, id);
+            System.out.println("Order: " + result);
+        } catch (Exception e) {
+            System.out.println("Error retrieving order: " + e);
+        }
 
-					System.out.println("Request failed:: " + e);
-					
-				}
+        promptContinue();
+    }
 
-				System.out.println("\nPress enter to continue..." );
-				c.readLine();
+    private static void createOrder() {
+        System.out.println("\n--- Create New Order ---");
+        System.out.print("First Name: ");
+        String first = keyboard.nextLine();
+        System.out.print("Last Name: ");
+        String last = keyboard.nextLine();
+        System.out.print("Address: ");
+        String address = keyboard.nextLine();
+        System.out.print("Phone: ");
+        String phone = keyboard.nextLine();
 
-			} // if
+        // Typically you'd auto-generate the date in yyyy-MM-dd
+        // Example: Using system date
+        String date = java.time.LocalDate.now().toString();
 
-			//////////// option 3 ////////////
+        System.out.println("\nYou are about to create an order with:");
+        System.out.println(" Date: " + date);
+        System.out.println(" First Name: " + first);
+        System.out.println(" Last Name: " + last);
+        System.out.println(" Address: " + address);
+        System.out.println(" Phone: " + phone);
 
-			if ( option == '3' )
-			{
-				// Here we create a new order entry in the database
+        System.out.print("\nConfirm creation (y/n)? ");
+        char confirm = readChar();
+        if (confirm == 'y' || confirm == 'Y') {
+            try {
+                String resp = api.newOrder(sessionToken, date, first, last, address, phone);
+                System.out.println("Creation response: " + resp);
+            } catch (Exception e) {
+                System.out.println("Error creating order: " + e);
+            }
+        } else {
+            System.out.println("Order creation canceled.");
+        }
 
-				dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-				localDate = LocalDate.now();
-				date = localDate.format(dtf);
+        promptContinue();
+    }
 
-				System.out.println("Enter first name:");
-				first = keyboard.nextLine();
+    private static void deleteOrder() {
+        System.out.println("\n--- Delete Order ---");
+        System.out.print("Enter Order ID to delete: ");
+        String id = keyboard.nextLine();
 
-				System.out.println("Enter last name:");
-				last = keyboard.nextLine();
-		
-				System.out.println("Enter address:");
-				address = keyboard.nextLine();
+        System.out.print("Are you sure you want to delete order " + id + "? (y/n) ");
+        char confirm = readChar();
+        if (confirm == 'y' || confirm == 'Y') {
+            try {
+                String resp = api.deleteOrder(sessionToken, id);
+                System.out.println("Delete response: " + resp);
+            } catch (Exception e) {
+                System.out.println("Error deleting order: " + e);
+            }
+        } else {
+            System.out.println("Delete operation canceled.");
+        }
 
-				System.out.println("Enter phone:");
-				phone = keyboard.nextLine();
+        promptContinue();
+    }
 
-				System.out.println("Creating the following order:");
-				System.out.println("==============================");
-				System.out.println(" Date:" + date);		
-				System.out.println(" First name:" + first);
-				System.out.println(" Last name:" + last);
-				System.out.println(" Address:" + address);
-				System.out.println(" Phone:" + phone);
-				System.out.println("==============================");					
-				System.out.println("\nPress 'y' to create this order:");
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //                      HELPER METHODS
+    ///////////////////////////////////////////////////////////////////////////////////////
 
-				option = keyboard.next().charAt(0);
+    /**
+     * Reads a single character from the user input. If no input, returns a blank char.
+     */
+    private static char readChar() {
+        String line = keyboard.nextLine();
+        if (line.isEmpty()) {
+            return ' ';
+        }
+        return line.charAt(0);
+    }
 
-				if (( option == 'y') || (option == 'Y'))
-				{
-					try
-					{
-						System.out.println("\nCreating order...");
-						response = api.newOrder(date, first, last, address, phone);
-						System.out.println(response);
-
-					} catch(Exception e) {
-
-						System.out.println("Request failed:: " + e);
-
-					}
-
-				} else {
-
-					System.out.println("\nOrder not created...");
-				}
-
-				System.out.println("\nPress enter to continue..." );
-				c.readLine();
-
-				option = ' '; //Clearing option. This incase the user enterd X/x the program will not exit.
-
-			} // if
-
-			//////////// option X ////////////
-
-			if ( ( option == 'X' ) || ( option == 'x' ))
-			{
-				// Here the user is done, so we set the Done flag and halt the system
-
-				done = true;
-				System.out.println( "\nDone...\n\n" );
-
-			} // if
-
-		} // while
-
-  	} // main
-
-} // OrdersUI
+    /**
+     * Simple utility to pause until user hits ENTER.
+     */
+    private static void promptContinue() {
+        System.out.println("\nPress ENTER to continue...");
+        if (console != null) {
+            console.readLine();
+        } else {
+            // Fallback for IDEs where System.console() is null
+            keyboard.nextLine();
+        }
+    }
+}
