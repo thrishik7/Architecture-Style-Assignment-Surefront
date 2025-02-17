@@ -59,7 +59,7 @@ LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
-UNLOCK TABLES;
+/*UNLOCK TABLES;*/
 
 DROP TABLE IF EXISTS `sessions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
