@@ -55,6 +55,24 @@ services:
       MYSQL_REMOTE_PORT: 3306
     networks:
       - ms
+    
+  delete:
+    image: ms_delete
+    container_name: ms_delete
+    build:
+      context: .
+      dockerfile: Dockerfile-dl
+      args:
+        MYSQL_PASSWORD: foo
+    depends_on:
+      - mysql
+    environment:
+      RMI_REMOTE_HOST: ms_delete
+      RMI_REMOTE_PORT: 1097
+      MYSQL_REMOTE_HOST: ms_mysql
+      MYSQL_REMOTE_PORT: 3306
+    networks:
+      - ms
 
   client:
     image: ms_client
