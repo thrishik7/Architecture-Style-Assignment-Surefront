@@ -45,12 +45,11 @@ services:
       dockerfile: Dockerfile-au
       args:
         MYSQL_PASSWORD: foo
-    platform: linux/arm64
     depends_on:
       - mysql
     environment:
-      RMI_REMOTE_HOST: ms_retrieve
-      RMI_REMOTE_PORT: 1098
+      RMI_REMOTE_HOST: ms_auth
+      RMI_REMOTE_PORT: 1096
       MYSQL_REMOTE_HOST: ms_mysql
       MYSQL_REMOTE_PORT: 3306
     networks:
