@@ -43,69 +43,6 @@ public class MSClientAPI
 		  registry.load(new FileReader("registry.properties"));
 	}
 
-	/********************************************************************************
-	* Description: Retrieves all the orders in the orderinfo database. Note 
-	*              that this method is serviced by the RetrieveServices server 
-	*			   process.
-	* Parameters: None
-	* Returns: String of all the current orders in the orderinfo database
-	********************************************************************************/
-
-	public String retrieveOrders() throws Exception
-	{
-		   // Get the registry entry for RetrieveServices service
-		   String entry = registry.getProperty("RetrieveServices");
-		   String host = entry.split(":")[0];
-		   String port = entry.split(":")[1];
-		   // Get the RMI registry
-		   Registry reg = LocateRegistry.getRegistry(host, Integer.parseInt(port));
-		   RetrieveServicesAI obj = (RetrieveServicesAI )reg.lookup("RetrieveServices");
-		   response = obj.retrieveOrders();
-		   return response;
-	}
-	
-	/********************************************************************************
-	* Description: Retrieves the order based on the id argument provided from the
-	*              orderinfo database. Note that this method is serviced by the 
-	*			   RetrieveServices server process.
-	* Parameters: None
-	* Returns: String of all the order corresponding to the order id argument 
-	*          in the orderinfo database.
-	********************************************************************************/
-
-	public String retrieveOrders(String id) throws Exception
-	{
-		   // Get the registry entry for RetrieveServices service
-		   String entry = registry.getProperty("RetrieveServices");
-		   String host = entry.split(":")[0];
-		   String port = entry.split(":")[1];
-		   // Get the RMI registry
-		   Registry reg = LocateRegistry.getRegistry(host, Integer.parseInt(port));
-		   RetrieveServicesAI obj = (RetrieveServicesAI )reg.lookup("RetrieveServices");
-           response = obj.retrieveOrders(id);
-           return(response);	
-
-	}
-
-	/********************************************************************************
-	* Description: Creates the new order to the orderinfo database
-	* Parameters: None
-	* Returns: String that contains the status of the create operatation
-	********************************************************************************/
-
-   	public String newOrder(String Date, String FirstName, String LastName, String Address, String Phone) throws Exception
-	{
-		   // Get the registry entry for CreateServices service
-		   String entry = registry.getProperty("CreateServices");
-		   String host = entry.split(":")[0];
-		   String port = entry.split(":")[1];
-		   // Get the RMI registry
-		   Registry reg = LocateRegistry.getRegistry(host, Integer.parseInt(port));
-           CreateServicesAI obj = (CreateServicesAI) reg.lookup("CreateServices"); 
-           response = obj.newOrder(Date, FirstName, LastName, Address, Phone);
-           return(response);	
-    }
-
 	public String authCreateUser(String username, String password) throws Exception {
 		String entry = registry.getProperty("AuthServices");
 		String host = entry.split(":")[0];
@@ -114,5 +51,61 @@ public class MSClientAPI
 		AuthServicesAI authService = (AuthServicesAI) reg.lookup("AuthServices");
 		return authService.createUser(username, password);
 	}
-
+	
+	public String authLoginUser(String username, String password) throws Exception {
+		String entry = registry.getProperty("AuthServices");
+		String host = entry.split(":")[0];
+		int port = Integer.parseInt(entry.split(":")[1]);
+		Registry reg = LocateRegistry.getRegistry(host, port);
+		AuthServicesAI authService = (AuthServicesAI) reg.lookup("AuthServices");
+		return authService.loginUser(username, password);
+	}
+	
+	public String authLogoutUser(String token) throws Exception {
+		String entry = registry.getProperty("AuthServices");
+		String host = entry.split(":")[0];
+		int port = Integer.parseInt(entry.split(":")[1]);
+		Registry reg = LocateRegistry.getRegistry(host, port);
+		AuthServicesAI authService = (AuthServicesAI) reg.lookup("AuthServices");
+		return authService.logoutUser(token);
+	}
+	
+	// Order creation
+	public String newOrder(String token, String date, String first, String last, String address, String phone) throws Exception {
+		String entry = registry.getProperty("CreateServices");
+		String host = entry.split(":")[0];
+		int port = Integer.parseInt(entry.split(":")[1]);
+		Registry reg = LocateRegistry.getRegistry(host, port);
+		CreateServicesAI createService = (CreateServicesAI) reg.lookup("CreateServices");
+		return createService.newOrder(token, date, first, last, address, phone);
+	}
+	
+	// Order retrieval
+	public String retrieveOrders(String token) throws Exception {
+		String entry = registry.getProperty("RetrieveServices");
+		String host = entry.split(":")[0];
+		int port = Integer.parseInt(entry.split(":")[1]);
+		Registry reg = LocateRegistry.getRegistry(host, port);
+		RetrieveServicesAI retrieveService = (RetrieveServicesAI) reg.lookup("RetrieveServices");
+		return retrieveService.retrieveOrders(token);
+	}
+	
+	public String retrieveOrders(String token, String orderId) throws Exception {
+		String entry = registry.getProperty("RetrieveServices");
+		String host = entry.split(":")[0];
+		int port = Integer.parseInt(entry.split(":")[1]);
+		Registry reg = LocateRegistry.getRegistry(host, port);
+		RetrieveServicesAI retrieveService = (RetrieveServicesAI) reg.lookup("RetrieveServices");
+		return retrieveService.retrieveOrders(token, orderId);
+	}
+	
+	// Order deletion
+	public String deleteOrder(String token, String orderId) throws Exception {
+		String entry = registry.getProperty("DeleteServices");
+		String host = entry.split(":")[0];
+		int port = Integer.parseInt(entry.split(":")[1]);
+		Registry reg = LocateRegistry.getRegistry(host, port);
+		DeleteServicesAI deleteService = (DeleteServicesAI) reg.lookup("DeleteServices");
+		return deleteService.deleteOrder(token, orderId);
+	}
 }
