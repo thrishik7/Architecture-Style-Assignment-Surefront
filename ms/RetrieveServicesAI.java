@@ -27,20 +27,22 @@ import java.rmi.*;
 		
 public interface RetrieveServicesAI extends java.rmi.Remote
 {
-	/*******************************************************
-	* Retrieves all orders from the orderinfo database and 
-	* returns them in the form of a string in ordered pairs 
-	* format.
-	*******************************************************/
+	/**
+     * Retrieves all orders if the user is authenticated.
+     *
+     * @param sessionToken the user’s session token
+     * @return JSON or text listing of all orders, or error
+     * @throws RemoteException
+     */
+    String retrieveOrders(String sessionToken) throws RemoteException;
 
-	String retrieveOrders() throws RemoteException;
-
-	/*******************************************************
-	* Retrieves the order corresponding to the order id in 
-	* method argument form the orderinfo database and 
-	* returns the order in the form of a string in ordered 
-	* pairs format.
-	*******************************************************/	
-
-	String retrieveOrders(String id ) throws RemoteException;
+    /**
+     * Retrieves the order with a specific ID if the user is authenticated.
+     *
+     * @param sessionToken the user’s session token
+     * @param orderId the order ID to retrieve
+     * @return JSON or text for the order, or error
+     * @throws RemoteException
+     */
+    String retrieveOrders(String sessionToken, String orderId) throws RemoteException;
 }

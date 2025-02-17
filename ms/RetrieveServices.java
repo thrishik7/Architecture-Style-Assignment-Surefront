@@ -27,204 +27,147 @@ import java.sql.*;
 
 public class RetrieveServices extends UnicastRemoteObject implements RetrieveServicesAI
 { 
-    // Set up the JDBC driver name and database URL
+    // JDBC and DB credentials
     static final String JDBC_CONNECTOR = "com.mysql.jdbc.Driver";  
     static final String DB_URL = Configuration.getJDBCConnection();
-
-    // Set up the orderinfo database credentials
     static final String USER = "root";
     static final String PASS = Configuration.MYSQL_PASSWORD;
 
-    // Do nothing constructor
     public RetrieveServices() throws RemoteException {}
 
-    // Main service loop
     public static void main(String args[]) 
     { 	
-    	// What we do is bind to rmiregistry, in this case localhost, port 1099. This is the default
-    	// RMI port. Note that I use rebind rather than bind. This is better as it lets you start
-    	// and restart without having to shut down the rmiregistry. 
-
-        try 
-        { 
+        try { 
             RetrieveServices obj = new RetrieveServices();
-
             Registry registry = Configuration.createRegistry();
             registry.bind("RetrieveServices", obj);
 
-            String[] boundNames = registry.list();
-            System.out.println("Registered services:");
-            for (String name : boundNames) {
-                System.out.println("\t" + name);
-            }
+            System.out.println("RetrieveServices is running...");
 
         } catch (Exception e) {
-
-            System.out.println("RetrieveServices binding err: " + e.getMessage()); 
+            System.out.println("RetrieveServices binding error: " + e.getMessage()); 
             e.printStackTrace();
         } 
-
-    } // main
+    }
 
 
     // Inplmentation of the abstract classes in RetrieveServicesAI happens here.
 
     // This method will return all the entries in the orderinfo database
 
-    public String retrieveOrders() throws RemoteException
+    @Override
+    public String retrieveOrders(String sessionToken) throws RemoteException
     {
-      	// Local declarations
+        // 1) Check authentication
+        if (!AuthUtils.isAuthenticated(sessionToken)) {
+            Logger.log("UNKNOWN", "RetrieveServices", "retrieveOrders()", "AUTH FAIL");
+            return "ERROR: Not Authenticated.";
+        }
 
-        Connection conn = null;		// connection to the orderinfo database
-        Statement stmt = null;		// A Statement object is an interface that represents a SQL statement.
-        String ReturnString = "[";	// Return string. If everything works you get an ordered pair of data
-        							// if not you get an error string
-        try
-        {
-            // Here we load and initialize the JDBC connector. Essentially a static class
-            // that is used to provide access to the database from inside this class.
+        Connection conn = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+        String returnString = "[";
 
+        try {
             Class.forName(JDBC_CONNECTOR);
-
-            //Open the connection to the orderinfo database
-
-            //System.out.println("Connecting to database...");
-            conn = DriverManager.getConnection(DB_URL,USER,PASS);
-
-            // Here we create the queery Execute a query. Not that the Statement class is part
-            // of the Java.rmi.* package that enables you to submit SQL queries to the database
-            // that we are connected to (via JDBC in this case).
-
-            // System.out.println("Creating statement...");
+            conn = DriverManager.getConnection(DB_URL, USER, PASS);
             stmt = conn.createStatement();
-            
-            String sql;
-            sql = "SELECT * FROM orders";
-            ResultSet rs = stmt.executeQuery(sql);
 
-            //Extract data from result set
+            String sql = "SELECT * FROM orders";
+            rs = stmt.executeQuery(sql);
 
-            while(rs.next())
-            {
-                //Retrieve by column name
-                int id  = rs.getInt("order_id");
+            while (rs.next()) {
+                int id = rs.getInt("order_id");
                 String date = rs.getString("order_date");
                 String first = rs.getString("first_name");
                 String last = rs.getString("last_name");
                 String address = rs.getString("address");
                 String phone = rs.getString("phone");
 
-                //Display values
-                //System.out.print("ID: " + id);
-                //System.out.print(", date: " + date);
-                //System.out.print(", first: " + first);
-                //System.out.print(", last: " + last);
-                //System.out.print(", address: " + address);
-                //System.out.println("phone:"+phone);
-
-                ReturnString = ReturnString +"{order_id:"+id+", order_date:"+date+", first_name:"+first+", last_name:"
-                               +last+", address:"+address+", phone:"+phone+"}";
-
+                returnString += "{order_id:" + id 
+                              + ", order_date:" + date
+                              + ", first_name:" + first
+                              + ", last_name:" + last
+                              + ", address:" + address
+                              + ", phone:" + phone + "}";
             }
 
-            ReturnString = ReturnString +"]";
+            returnString += "]";
 
-            //Clean-up environment
+            // 2) Log success
+            String username = AuthUtils.getUsername(sessionToken);
+            Logger.log(username, "RetrieveServices", "retrieveOrders()", "SUCCESS");
 
-            rs.close();
-            stmt.close();
-            conn.close();
-            stmt.close(); 
-            conn.close();
-
-        } catch(Exception e) {
-
-            ReturnString = e.toString();
-        } 
-        
-        return(ReturnString);
-
-    } //retrieve all orders
+            return returnString;
+        } catch (Exception e) {
+            // 3) Log error
+            Logger.log("UNKNOWN", "RetrieveServices", "retrieveOrders()", "ERROR: " + e.getMessage());
+            return "ERROR: " + e.getMessage();
+        } finally {
+            try { if (rs != null) rs.close(); } catch (Exception ignore) {}
+            try { if (stmt != null) stmt.close(); } catch (Exception ignore) {}
+            try { if (conn != null) conn.close(); } catch (Exception ignore) {}
+        }
+    }
 
     // This method will returns the order in the orderinfo database corresponding to the id
     // provided in the argument.
 
-    public String retrieveOrders(String orderid) throws RemoteException
+    @Override
+    public String retrieveOrders(String sessionToken, String orderId) throws RemoteException
     {
-      	// Local declarations
+        // 1) Check authentication
+        if (!AuthUtils.isAuthenticated(sessionToken)) {
+            Logger.log("UNKNOWN", "RetrieveServices", "retrieveOrders("+orderId+")", "AUTH FAIL");
+            return "ERROR: Not Authenticated.";
+        }
 
-        Connection conn = null;		// connection to the orderinfo database
-        Statement stmt = null;		// A Statement object is an interface that represents a SQL statement.
-        String ReturnString = "[";	// Return string. If everything works you get an ordered pair of data
-        							// if not you get an error string
+        Connection conn = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+        String returnString = "[";
 
-        try
-        {
-            // Here we load and initialize the JDBC connector. Essentially a static class
-            // that is used to provide access to the database from inside this class.
-
+        try {
             Class.forName(JDBC_CONNECTOR);
-
-            //Open the connection to the orderinfo database
-
-            //System.out.println("Connecting to database...");
-            conn = DriverManager.getConnection(DB_URL,USER,PASS);
-
-            // Here we create the queery Execute a query. Not that the Statement class is part
-            // of the Java.rmi.* package that enables you to submit SQL queries to the database
-            // that we are connected to (via JDBC in this case).
-
-            // System.out.println("Creating statement...");
+            conn = DriverManager.getConnection(DB_URL, USER, PASS);
             stmt = conn.createStatement();
-            
-            String sql;
-            sql = "SELECT * FROM orders where order_id=" + orderid;
-            ResultSet rs = stmt.executeQuery(sql);
 
-            // Extract data from result set. Note there should only be one for this method.
-            // I used a while loop should there every be a case where there might be multiple
-            // orders for a single ID.
+            String sql = "SELECT * FROM orders WHERE order_id=" + orderId;
+            rs = stmt.executeQuery(sql);
 
-            while(rs.next())
-            {
-                //Retrieve by column name
-                int id  = rs.getInt("order_id");
+            while (rs.next()) {
+                int id = rs.getInt("order_id");
                 String date = rs.getString("order_date");
                 String first = rs.getString("first_name");
                 String last = rs.getString("last_name");
                 String address = rs.getString("address");
                 String phone = rs.getString("phone");
 
-                //Display values
-                //System.out.print("ID: " + id);
-                //System.out.print(", date: " + date);
-                //System.out.print(", first: " + first);
-                //System.out.print(", last: " + last);
-                //System.out.print(", address: " + address);
-                //System.out.println("phone:"+phone);
-
-                ReturnString = ReturnString +"{order_id:"+id+", order_date:"+date+", first_name:"+first+", last_name:"
-                               +last+", address:"+address+", phone:"+phone+"}";
+                returnString += "{order_id:" + id 
+                              + ", order_date:" + date
+                              + ", first_name:" + first
+                              + ", last_name:" + last
+                              + ", address:" + address
+                              + ", phone:" + phone + "}";
             }
 
-            ReturnString = ReturnString +"]";
+            returnString += "]";
 
-            //Clean-up environment
+            // 2) Log success
+            String username = AuthUtils.getUsername(sessionToken);
+            Logger.log(username, "RetrieveServices", "retrieveOrders("+orderId+")", "SUCCESS");
 
-            rs.close();
-            stmt.close();
-            conn.close();
-            stmt.close(); 
-            conn.close();
-
-        } catch(Exception e) {
-
-            ReturnString = e.toString();
-
-        } 
-
-        return(ReturnString);
-
-    } //retrieve order by id
+            return returnString;
+        } catch (Exception e) {
+            // 3) Log error
+            Logger.log("UNKNOWN", "RetrieveServices", "retrieveOrders("+orderId+")", "ERROR: " + e.getMessage());
+            return "ERROR: " + e.getMessage();
+        } finally {
+            try { if (rs != null) rs.close(); } catch (Exception ignore) {}
+            try { if (stmt != null) stmt.close(); } catch (Exception ignore) {}
+            try { if (conn != null) conn.close(); } catch (Exception ignore) {}
+        }
+    }
 
 } // RetrieveServices
