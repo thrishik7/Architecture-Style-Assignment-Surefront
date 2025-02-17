@@ -7,7 +7,6 @@ services:
       dockerfile: Dockerfile-cs
       args:
         MYSQL_PASSWORD: foo
-    platform: linux/arm64
     depends_on:
       - mysql
     environment:
@@ -26,30 +25,11 @@ services:
       dockerfile: Dockerfile-rs
       args:
         MYSQL_PASSWORD: foo
-    platform: linux/arm64
     depends_on:
       - mysql
     environment:
       RMI_REMOTE_HOST: ms_retrieve
       RMI_REMOTE_PORT: 1098
-      MYSQL_REMOTE_HOST: ms_mysql
-      MYSQL_REMOTE_PORT: 3306
-    networks:
-      - ms
-    
-  auth:
-    image: ms_auth
-    container_name: ms_auth
-    build:
-      context: .
-      dockerfile: Dockerfile-au
-      args:
-        MYSQL_PASSWORD: foo
-    depends_on:
-      - mysql
-    environment:
-      RMI_REMOTE_HOST: ms_auth
-      RMI_REMOTE_PORT: 1096
       MYSQL_REMOTE_HOST: ms_mysql
       MYSQL_REMOTE_PORT: 3306
     networks:
@@ -72,11 +52,28 @@ services:
       MYSQL_REMOTE_PORT: 3306
     networks:
       - ms
+  
+  auth:
+    image: ms_auth
+    container_name: ms_auth
+    build:
+      context: .
+      dockerfile: Dockerfile-au
+      args:
+        MYSQL_PASSWORD: foo
+    depends_on:
+      - mysql
+    environment:
+      RMI_REMOTE_HOST: ms_auth
+      RMI_REMOTE_PORT: 1096
+      MYSQL_REMOTE_HOST: ms_mysql
+      MYSQL_REMOTE_PORT: 3306
+    networks:
+      - ms
 
   client:
     image: ms_client
     container_name: ms_client
-    platform: linux/arm64
     stdin_open: true
     tty: true
     build:
@@ -90,24 +87,24 @@ services:
       - ms
 
   mysql:
-    image: mysql:5
-    platform: linux/amd64
+    image: mysql:5.7
     container_name: ms_mysql
     volumes:
       - ./init-db:/docker-entrypoint-initdb.d
       - ms_db:/var/lib/mysql
     environment:
-      "MYSQL_ROOT_PASSWORD": foo
-      "MYSQL_DATABASE": ms_orderinfo
-      "MYSQL_HOST": ms_mysql
+      MYSQL_ROOT_PASSWORD: foo
+      MYSQL_DATABASE: ms_orderinfo
+      MYSQL_HOST: ms_mysql
+      MYSQL_ROOT_HOST: '%'
     expose:
-      - 3306
+      - "3306"
     networks:
       - ms
 
 networks:
   ms:
+
 volumes:
   ms_db:
     external: true
-
