@@ -53,8 +53,10 @@ public class CreateServices extends UnicastRemoteObject implements CreateService
 
             String[] boundNames = registry.list();
             System.out.println("Registered services:");
+            Logger.log(false, "CreateServices", "Registered services:");
             for (String name : boundNames) {
                 System.out.println("\t" + name);
+                Logger.log(false, "CreateServices", "\t" + name);
             }
             // Bind this object instance to the name RetrieveServices in the rmiregistry 
             // Naming.rebind("//" + Configuration.getRemoteHost() + ":1099/CreateServices", obj); 
@@ -62,6 +64,7 @@ public class CreateServices extends UnicastRemoteObject implements CreateService
         } catch (Exception e) {
 
             System.out.println("CreateServices binding err: " + e.getMessage()); 
+            Logger.log(true, "CreateServices", "CreateServices binding error: " + e.getMessage());
             e.printStackTrace();
         } 
 
@@ -94,14 +97,19 @@ public class CreateServices extends UnicastRemoteObject implements CreateService
 
         String username = AuthUtils.getUsername(sessionToken);
         logAction(username, "newOrder", "SUCCESS");
-
+        Logger.log(false, "CreateServices", "newOrder created: " + ifirst + " " + ilast);
         return "Order Created Successfully";
     } catch(Exception e) {
         logAction("UNKNOWN", "newOrder", "ERROR: " + e.getMessage());
+        Logger.log(true, "CreateServices",  "ERROR: " + e.getMessage());
         return "ERROR: " + e.getMessage();
     } finally {
-        try { if (stmt != null) stmt.close(); } catch (Exception ignore){}
-        try { if (conn != null) conn.close(); } catch (Exception ignore){}
+        try { if (stmt != null) stmt.close(); } catch (Exception e){
+            Logger.log(true, "CreateServices", e.getMessage());
+        }
+        try { if (conn != null) conn.close(); } catch (Exception e){
+            Logger.log(true, "CreateServices", e.getMessage());
+        }
     }
 }
 

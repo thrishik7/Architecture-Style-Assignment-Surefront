@@ -25,6 +25,7 @@ public class AuthServices extends UnicastRemoteObject implements AuthServicesAI 
             System.out.println("AuthServices is running...");
 
         } catch (Exception e) {
+            Logger.log(true, "AuthServices", "binding error: " + e.getMessage());
             System.out.println("AuthServices binding error: " + e.getMessage());
             e.printStackTrace();
         }
@@ -44,20 +45,26 @@ public class AuthServices extends UnicastRemoteObject implements AuthServicesAI 
             ps.setString(1, username);
             ps.setString(2, password);
             ps.executeUpdate();
-    
+            Logger.log(false, "AuthServices", "User Createred: " + username);
             logAction(username, "createUser", "SUCCESS");
             return "SUCCESS";
         } catch (SQLException e) {
             e.printStackTrace();
+            Logger.log(true, "AuthServices", "AuthServices binding error: " + e.getMessage());
             logAction(username, "createUser", "FAIL: " + e.getMessage());
             return "ERROR: " + e.getMessage();
         } catch (Exception e) {
             e.printStackTrace();
+            Logger.log(true, "AuthServices", "FAIL: " + e.getMessage());
             logAction(username, "createUser", "FAIL: " + e.getMessage());
             return "ERROR: " + e.getMessage();
         } finally {
-            try { if (ps != null) ps.close(); } catch (Exception ignore){}
-            try { if (conn != null) conn.close(); } catch (Exception ignore){}
+            try { if (ps != null) ps.close(); } catch (Exception e){
+                Logger.log(true, "AuthServices", e.getMessage());
+            }
+            try { if (conn != null) conn.close(); } catch (Exception e){
+                Logger.log(true, "AuthServices", e.getMessage());
+            }
         }
     }
 
@@ -110,11 +117,18 @@ public class AuthServices extends UnicastRemoteObject implements AuthServicesAI 
 
         } catch (Exception e) {
             e.printStackTrace();
+            Logger.log(true, "AuthServices", e.getMessage());
             return "ERROR: " + e.getMessage();
         } finally {
-            try { if (rs != null) rs.close(); } catch (Exception ignore){}
-            try { if (ps != null) ps.close(); } catch (Exception ignore){}
-            try { if (conn != null) conn.close(); } catch (Exception ignore){}
+            try { if (rs != null) rs.close(); } catch (Exception e){
+                Logger.log(true, "AuthServices", e.getMessage());
+            }
+            try { if (ps != null) ps.close(); } catch (Exception e){
+                Logger.log(true, "AuthServices", e.getMessage());
+            }
+            try { if (conn != null) conn.close(); } catch (Exception e){
+                Logger.log(true, "AuthServices", e.getMessage());
+            }
         }
     }
 
@@ -140,10 +154,15 @@ public class AuthServices extends UnicastRemoteObject implements AuthServicesAI 
             return (deleted > 0)? "SUCCESS" : "No such session";
         } catch (Exception e) {
             e.printStackTrace();
+            Logger.log(true, "AuthServices", e.getMessage());
             return "ERROR: " + e.getMessage();
         } finally {
-            try { if (ps != null) ps.close(); } catch (Exception ignore){}
-            try { if (conn != null) conn.close(); } catch (Exception ignore){}
+            try { if (ps != null) ps.close(); } catch (Exception e){
+                Logger.log(true, "AuthServices", e.getMessage());
+            }
+            try { if (conn != null) conn.close(); } catch (Exception e){
+                Logger.log(true, "AuthServices", e.getMessage());
+            }
         }
     }
 

@@ -18,10 +18,11 @@ public class DeleteServices extends UnicastRemoteObject implements DeleteService
             DeleteServices obj = new DeleteServices();
             Registry registry = Configuration.createRegistry();
             registry.bind("DeleteServices", obj);
-
+            Logger.log(false, "DeleteServices", "running...");
             System.out.println("DeleteServices is running...");
 
         } catch (Exception e) {
+            Logger.log(true, "DeleteServices", "binding error: " + e.getMessage());
             System.out.println("DeleteServices binding error: " + e.getMessage());
             e.printStackTrace();
         }
@@ -50,6 +51,7 @@ public class DeleteServices extends UnicastRemoteObject implements DeleteService
             // 3) Log success/failure
             String username = AuthUtils.getUsername(sessionToken);
             if (rowsAffected > 0) {
+                Logger.log(false, "DeleteServices", "deleteOrder(" + orderId + ")");
                 logAction(username, "deleteOrder(" + orderId + ")", "SUCCESS");
                 return "Deleted order with ID=" + orderId;
             } else {
@@ -58,12 +60,17 @@ public class DeleteServices extends UnicastRemoteObject implements DeleteService
             }
         } catch (Exception e) {
             e.printStackTrace();
+            Logger.log(true, "DeleteServices", "orderId: " + orderId + "ERROR: " + e.getMessage());
             logAction("UNKNOWN", "deleteOrder(" + orderId + ")", "ERROR: " + e.getMessage());
             return "ERROR: " + e.getMessage();
         } finally {
             // Clean up
-            try { if (stmt != null) stmt.close(); } catch (Exception ignore) {}
-            try { if (conn != null) conn.close(); } catch (Exception ignore) {}
+            try { if (stmt != null) stmt.close(); } catch (Exception e) {
+                Logger.log(true, "DeleteServices", e.getMessage());
+            }
+            try { if (conn != null) conn.close(); } catch (Exception e) {
+                Logger.log(true, "DeleteServices", e.getMessage());
+            }
         }
     }
 
