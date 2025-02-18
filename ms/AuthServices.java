@@ -66,22 +66,48 @@ public class AuthServices extends UnicastRemoteObject implements AuthServicesAI 
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
-    
+
         try {
             Class.forName(JDBC_CONNECTOR);
             conn = DriverManager.getConnection(DB_URL, USER, PASS);
-    
+
+            // 1) Check if the user exists with matching username/password
             String sql = "SELECT id FROM users WHERE username=? AND password=?";
             ps = conn.prepareStatement(sql);
             ps.setString(1, username);
             ps.setString(2, password);
-    
+
             rs = ps.executeQuery();
             if (!rs.next()) {
                 logAction(username, "loginUser", "FAIL: Invalid credentials");
                 return "ERROR: Invalid credentials";
             }
-    
+
+            // 2) If we get here, credentials are valid
+            int userId = rs.getInt("id");
+            rs.close();
+            ps.close();
+
+            // 3) Generate a session token (for example, using UUID)
+            String token = java.util.UUID.randomUUID().toString();
+
+            // 4) Insert the session token into the sessions table
+            //    The table might have columns: session_token, user_id, valid_until
+            String insertSession = "INSERT INTO sessions (session_token, user_id, valid_until) VALUES (?, ?, ?)";
+            ps = conn.prepareStatement(insertSession);
+            ps.setString(1, token);
+            ps.setInt(2, userId);
+
+            // Example: session is valid for 24 hours
+            java.time.LocalDateTime validUntil = java.time.LocalDateTime.now().plusHours(24);
+            ps.setString(3, validUntil.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+            ps.executeUpdate();
+
+            // 5) Log success and return the token
+            logAction(username, "loginUser", "SUCCESS");
+            return token;
+
         } catch (Exception e) {
             e.printStackTrace();
             return "ERROR: " + e.getMessage();
@@ -90,7 +116,6 @@ public class AuthServices extends UnicastRemoteObject implements AuthServicesAI 
             try { if (ps != null) ps.close(); } catch (Exception ignore){}
             try { if (conn != null) conn.close(); } catch (Exception ignore){}
         }
-        return "SUCCESS";
     }
 
     @Override
