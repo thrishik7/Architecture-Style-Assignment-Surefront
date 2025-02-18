@@ -41,10 +41,11 @@ public class RetrieveServices extends UnicastRemoteObject implements RetrieveSer
             RetrieveServices obj = new RetrieveServices();
             Registry registry = Configuration.createRegistry();
             registry.bind("RetrieveServices", obj);
-
+            Logger.log(false, "RetrieveServices", "running...");
             System.out.println("RetrieveServices is running...");
 
         } catch (Exception e) {
+            Logger.log(true, "RetrieveServices", "binding error: " + e.getMessage());
             System.out.println("RetrieveServices binding error: " + e.getMessage()); 
             e.printStackTrace();
         } 
@@ -60,7 +61,7 @@ public class RetrieveServices extends UnicastRemoteObject implements RetrieveSer
     {
         // 1) Check authentication
         if (!AuthUtils.isAuthenticated(sessionToken)) {
-            Logger.log("UNKNOWN", "RetrieveServices", "retrieveOrders()", "AUTH FAIL");
+            Logger.logAction("UNKNOWN", "RetrieveServices", "retrieveOrders()", "AUTH FAIL");
             return "ERROR: Not Authenticated.";
         }
 
@@ -97,17 +98,24 @@ public class RetrieveServices extends UnicastRemoteObject implements RetrieveSer
 
             // 2) Log success
             String username = AuthUtils.getUsername(sessionToken);
-            Logger.log(username, "RetrieveServices", "retrieveOrders()", "SUCCESS");
+            Logger.logAction(username, "RetrieveServices", "retrieveOrders()", "SUCCESS");
 
             return returnString;
         } catch (Exception e) {
             // 3) Log error
-            Logger.log("UNKNOWN", "RetrieveServices", "retrieveOrders()", "ERROR: " + e.getMessage());
+            Logger.logAction("UNKNOWN", "RetrieveServices", "retrieveOrders()", "ERROR: " + e.getMessage());
+            Logger.log(true, "RetrieveServices", "ERROR: " + e.getMessage());
             return "ERROR: " + e.getMessage();
         } finally {
-            try { if (rs != null) rs.close(); } catch (Exception ignore) {}
-            try { if (stmt != null) stmt.close(); } catch (Exception ignore) {}
-            try { if (conn != null) conn.close(); } catch (Exception ignore) {}
+            try { if (rs != null) rs.close(); } catch (Exception e) {
+                Logger.log(true, "RetrieveServices", "ERROR: " + e.getMessage());
+            }
+            try { if (stmt != null) stmt.close(); } catch (Exception e) {
+                Logger.log(true, "RetrieveServices", "ERROR: " + e.getMessage());
+            }
+            try { if (conn != null) conn.close(); } catch (Exception e) {
+                Logger.log(true, "RetrieveServices", "ERROR: " + e.getMessage());
+            }
         }
     }
 
@@ -119,7 +127,7 @@ public class RetrieveServices extends UnicastRemoteObject implements RetrieveSer
     {
         // 1) Check authentication
         if (!AuthUtils.isAuthenticated(sessionToken)) {
-            Logger.log("UNKNOWN", "RetrieveServices", "retrieveOrders("+orderId+")", "AUTH FAIL");
+            Logger.logAction("UNKNOWN", "RetrieveServices", "retrieveOrders("+orderId+")", "AUTH FAIL");
             return "ERROR: Not Authenticated.";
         }
 
@@ -156,17 +164,24 @@ public class RetrieveServices extends UnicastRemoteObject implements RetrieveSer
 
             // 2) Log success
             String username = AuthUtils.getUsername(sessionToken);
-            Logger.log(username, "RetrieveServices", "retrieveOrders("+orderId+")", "SUCCESS");
-
+            Logger.logAction(username, "RetrieveServices", "retrieveOrders("+orderId+")", "SUCCESS");
+            Logger.log(false, "RetrieveServices", "SUCCESS: " + orderId);
             return returnString;
         } catch (Exception e) {
             // 3) Log error
-            Logger.log("UNKNOWN", "RetrieveServices", "retrieveOrders("+orderId+")", "ERROR: " + e.getMessage());
+            Logger.logAction("UNKNOWN", "RetrieveServices", "retrieveOrders("+orderId+")", "ERROR: " + e.getMessage());
+            Logger.log(true, "RetrieveServices", "ERROR: " + e.getMessage());
             return "ERROR: " + e.getMessage();
         } finally {
-            try { if (rs != null) rs.close(); } catch (Exception ignore) {}
-            try { if (stmt != null) stmt.close(); } catch (Exception ignore) {}
-            try { if (conn != null) conn.close(); } catch (Exception ignore) {}
+            try { if (rs != null) rs.close(); } catch (Exception e) {
+               Logger.log(true, "RetrieveServices", e.getMessage());
+            }
+            try { if (stmt != null) stmt.close(); } catch (Exception e) {
+               Logger.log(true, "RetrieveServices", e.getMessage());
+            }
+            try { if (conn != null) conn.close(); } catch (Exception e) {
+               Logger.log(true, "RetrieveServices", e.getMessage());
+            }
         }
     }
 
