@@ -55,7 +55,7 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection) {
         query = mysql.format(query,table);
         connection.query(query,function(err,rows){
             if(err) {
-                res.json({"Error" : true, "Message" : "Error executing MySQL query"});
+                res.json({"Error" : true, "Message" : "Error executing MySQL query", err});
             } else {
                 res.json({"Error" : false, "Message" : "Success", "Orders" : rows});
             }
@@ -73,7 +73,7 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection) {
         query = mysql.format(query,table);
         connection.query(query,function(err,rows){
             if(err) {
-                res.json({"Error" : true, "Message" : "Error executing MySQL query"});
+                res.json({"Error" : true, "Message" : "Error executing MySQL query", err});
             } else {
                 res.json({"Error" : false, "Message" : "Success", "Users" : rows});
             }
@@ -91,7 +91,7 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection) {
         query = mysql.format(query,table);
         connection.query(query,function(err,rows){
             if(err) {
-                res.json({"Error" : true, "Message" : "Error executing MySQL query"});
+                res.json({"Error" : true, "Message" : "Error executing MySQL query", err});
             } else {
                 res.json({"Error" : false, "Message" : "Success", "Deleted" : rows});
             }
@@ -109,7 +109,7 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection) {
         query = mysql.format(query,table);
         connection.query(query,function(err,rows){
             if(err) {
-                res.json({"Error" : true, "Message" : "Error executing MySQL query"});
+                res.json({"Error" : true, "Message" : "Error executing MySQL query", err});
             } else {
                 res.json({"Error" : false, "Message" : "User Added !"});
             }
@@ -123,7 +123,7 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection) {
         query = mysql.format(query,table);
         connection.query(query,function(err,rows){
             if(err) {
-                res.json({"Error" : true, "Message" : "Error executing MySQL query"});
+                res.json({"Error" : true, "Message" : "Error executing MySQL query", err});
             } else {
                 res.json({"Error" : false, "Message" : "User Added !"});
             }
@@ -134,19 +134,28 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection) {
     router.post("/users/login",function(req,res){
         console.log("Logging in user ", req.body.username,",",req.body.password);
         var query = "SELECT * FROM ?? WHERE ??=? AND ??=?";
-        var table = ["users","username",req.body.username,"password",req.body.password];
-        query = mysql.format(query,table);
+        query = mysql.format(query,["users","username",req.body.username,"password",req.body.password]);
         connection.query(query,function(err,rows){
             if(err) {
-                res.json({"Error" : true, "Message" : "Error executing MySQL query"});
+                res.json({"Error" : true, "Message" : "Error executing MySQL query", err});
             } else {
+                console.log(rows)
                 if (rows.length > 0) {
-                    res.json({
-                        "Message": "Login successful",
-                        "user_id": rows[0].id.toString()
+                    const sessionToken = require('crypto').randomBytes(32).toString('hex');
+                    const sessionQuery = "INSERT INTO sessions (session_token, user_id, valid_until) VALUES (?, ?, ?)";
+                    console.log(rows, rows[0]['id'], sessionToken);
+                    connection.query(sessionQuery, [sessionToken, rows[0]['id'], new Date(Date.now() + 1000 * 60 * 60 * 24)], function(sessionErr) {
+                        if(sessionErr) {
+                            res.json({"Error" : true, "Message" : "Error creating session", err: sessionErr});
+                        } else {
+                            res.json({
+                                "Message": "Login successful",
+                                "session_token": sessionToken
+                            });
+                        }
                     });
                 } else {
-                    res.json({"Error" : true, "Message" : "Invalid username or password"});
+                    res.json({"Error" : true, "Message" : "Invalid username or password", err});
                 }
             }
         });

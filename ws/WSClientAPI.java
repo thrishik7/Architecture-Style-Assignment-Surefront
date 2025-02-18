@@ -32,10 +32,10 @@ import java.nio.charset.StandardCharsets;
 
 public class WSClientAPI
 {
-	private String userId;
+	private String sessionToken;
 
-	public WSClientAPI(String userId) {
-		this.userId = userId;
+	public WSClientAPI(String sessionToken) {
+		this.sessionToken = sessionToken;
 	}
 
 	/********************************************************************************
@@ -53,7 +53,7 @@ public class WSClientAPI
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-		addUserIdHeader(con);
+		addSessionTokenHeader(con);
 
 		//Form the request header and instantiate the response code
 		con.setRequestMethod("GET");
@@ -92,7 +92,7 @@ public class WSClientAPI
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-		addUserIdHeader(con);
+		addSessionTokenHeader(con);
 
 		//Form the request header and instantiate the response code
 		con.setRequestMethod("GET");
@@ -128,7 +128,7 @@ public class WSClientAPI
 		URL url = new URL("http://ws_server:3000/api/orders");
 		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-		addUserIdHeader(conn);
+		addSessionTokenHeader(conn);
 
 		// The POST parameters
 		String input = "order_date="+Date+"&first_name="+FirstName+"&last_name="+LastName+"&address="+Address+"&phone="+Phone;
@@ -184,7 +184,7 @@ public class WSClientAPI
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-		addUserIdHeader(con);
+		addSessionTokenHeader(con);
 
 		//Form the request header and instantiate the response code
 		con.setRequestMethod("DELETE");
@@ -305,9 +305,10 @@ public class WSClientAPI
         return response.toString();
     }
 
-    private void addUserIdHeader(HttpURLConnection conn) {
-        if (userId != null) {
-            conn.setRequestProperty("X-User-ID", userId);
+    private void addSessionTokenHeader(HttpURLConnection conn) {
+		System.out.println("Adding session token: " + sessionToken);
+        if (sessionToken != null) {
+            conn.setRequestProperty("x-session-token", sessionToken);
         }
     }
 } // WSClientAPI

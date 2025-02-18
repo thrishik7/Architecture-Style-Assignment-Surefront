@@ -113,8 +113,9 @@ public class OrdersUI
 					if (response.contains("Error")) {
 						System.out.println("Error: " + response);
 					} else {
-						String userId = response.split("\"user_id\":\"")[1].split("\"")[0];
-						loggedInLoop(userId);
+						String sessionToken = response.split("\"session_token\":\"")[1].split("\"")[0];
+						System.out.println("Session token: " + sessionToken);
+						loggedInLoop(sessionToken);
 					}
 				} catch(Exception e) {
 					System.out.println("Request failed:: " + e);
@@ -132,7 +133,7 @@ public class OrdersUI
 
   	} // main
 
-	public static void loggedInLoop(String userId) {
+	public static void loggedInLoop(String sessionId) {
 		boolean done = false;						// main loop flag
 		boolean error = false;						// error flag
 		char    option;								// Menu choice from user
@@ -147,7 +148,7 @@ public class OrdersUI
 		Scanner keyboard = new Scanner(System.in);	// keyboard scanner object for user input
 		DateTimeFormatter dtf = null;				// Date object formatter
 		LocalDate localDate = null;					// Date object
-		WSClientAPI api = new WSClientAPI(userId);	// RESTful api object
+		WSClientAPI api = new WSClientAPI(sessionId);	// RESTful api object
 
 		/////////////////////////////////////////////////////////////////////////////////
 		// Main UI loop

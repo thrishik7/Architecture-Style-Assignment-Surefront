@@ -55,44 +55,49 @@ function Logger() {
 
 // Add methods to prototype
 Logger.prototype.logRequest = function(req) {
-    console.log("Logging Request");
-    const userId = req.headers['x-user-id'] || 'anonymous';
+    const timestamp = new Date().toISOString()
     const logEntry = {
-        timestamp: new Date(),
+        timestamp: timestamp,
+        level: 'INFO',
         ip: req.ip,
         api: req.path,
-        uuid: userId,
-        meta_data: JSON.stringify(req.body),
-        status: 'pending'
+        session_token: req.headers['x-session-token'] || 'anonymous',
+        meta_data: JSON.stringify(req.body) || 'null',
+        status: 'pending',
+        error: 'null',
     };
-
     this.writeToLog(logEntry);
 };
 
-Logger.prototype.logResponse = function(req, status) {
-    console.log("Logging Response");
-    const userId = req.headers['x-user-id'] || 'anonymous';
-    const logStatus = {
-        timestamp: new Date(),
+Logger.prototype.logResponse = function(req, res) {
+    const timestamp = new Date().toISOString()
+    const logEntry = {
+        timestamp: timestamp,
+        level: res.statusCode >= 400 ? 'ERROR' : 'INFO',
         ip: req.ip,
         api: req.path,
-        uuid: userId,
-        meta_data: JSON.stringify(req.body),
-        status: status
+        session_token: req.headers['x-session-token'] || 'anonymous',
+        meta_data: JSON.stringify(req.body) || 'null',
+        status: res.statusCode || 'unknown',
+        error: res.error || 'null',
     };
-
-    this.writeToLog(logStatus);
+    this.writeToLog(logEntry);
 };
 
 Logger.prototype.writeToLog = function(data) {
     console.log("Writing to log");
-    fs.appendFile(
-        this.logPath,
-        JSON.stringify(data) + '\n',
-        (err) => {
-            if (err) console.error('Error writing to log file:', err);
-        }
-    );
+    const logString = `${data.timestamp} [${data.level}] ip=${data.ip} | api=${data.api} | session=${data.session_token} | meta=${data.meta_data} | status=${data.status} | error=${data.error}\n`;
+    try {
+        fs.appendFile(
+            this.logPath,
+            logString,
+            (err) => {
+                if (err) console.error('Error writing to log file:', err);
+            }
+        );
+    } catch (err) {
+        console.error('Error writing to log file:', err);
+    }
 };
 
 // Function definition
@@ -133,16 +138,53 @@ REST.prototype.configureExpress = function(connection) {
     // Create a logger instance
     const logger = new Logger();
 
-    const middleware = (req, res, next) => {
+    var router = express.Router();  // Move router creation before middleware
+
+    const middleware = async (req, res, next) => {
         console.log("Middleware Intercepted");
         logger.logRequest(req);
-        const originalSend = res.send;
-        res.send = function(...args) {
-            console.log("Response sent with status:", res.statusCode);
-            logger.logResponse(req, res.statusCode);
-            originalSend.apply(res, args);
-        };
-        next();
+
+        // Skip session validation for login and register endpoints
+        if (req.path === '/users/login' || req.path === '/users/register') {
+            const originalSend = res.send;
+            res.send = function(...args) {
+                logger.logResponse(req, res);
+                originalSend.apply(res, args);
+            };
+            return next();
+        }
+
+        // Session validation
+        const sessionToken = req.headers['x-session-token'];
+        if (sessionToken && sessionToken !== 'undefined') {
+            const query = 'SELECT * FROM sessions WHERE session_token = ? AND valid_until > NOW()';
+            connection.query(query, [sessionToken], (error, results) => {
+                if (error) {
+                    console.error('Session validation error:', error);
+                    res.status(500).json({ error: 'Internal server error' });
+                    return;
+                }
+
+                if (results.length === 0) {
+                    res.status(401).json({ error: 'Invalid or expired session' });
+                    return;
+                }
+
+                // Add user info to request object
+                req.session = results[0];
+                
+                // Continue with original middleware functionality
+                const originalSend = res.send;
+                res.send = function(...args) {
+                    logger.logResponse(req, res);
+                    originalSend.apply(res, args);
+                };
+                next();
+            });
+        } else {
+            res.status(401).json({ error: 'No session token provided' });
+            return;
+        }
     };
 
     var router = express.Router();
@@ -151,23 +193,15 @@ REST.prototype.configureExpress = function(connection) {
     self.startServer();
 }
 
-// If we get here, we are ready to start the server. Basically a listen() on 
-// port 3000. I hardwired it in this example, you can change it if you like.
-// I guess making it a variable would be better (javascript doesn't have #define).
-
 REST.prototype.startServer = function() {
       app.listen(3000,function(){
           console.log("Server Started at Port 3000.");
       });
 }
 
-// We land here if we can't connect to mysql
-
 REST.prototype.stop = function(err) {
     console.log("Issue connecting with mysql and/or connecting to the database.\n" + err);
     process.exit(1);
 }
-
-// Instantiation
 
 new REST();
