@@ -176,10 +176,10 @@ public class RetrieveServices extends UnicastRemoteObject implements RetrieveSer
             try { if (rs != null) rs.close(); } catch (Exception e) {
                Logger.log(true, "RetrieveServices", e.getMessage());
             }
-            try { if (stmt != null) stmt.close(); } catch (Exception ignore) {
+            try { if (stmt != null) stmt.close(); } catch (Exception e) {
                Logger.log(true, "RetrieveServices", e.getMessage());
             }
-            try { if (conn != null) conn.close(); } catch (Exception ignore) {
+            try { if (conn != null) conn.close(); } catch (Exception e) {
                Logger.log(true, "RetrieveServices", e.getMessage());
             }
         }

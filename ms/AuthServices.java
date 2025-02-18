@@ -167,6 +167,6 @@ public class AuthServices extends UnicastRemoteObject implements AuthServicesAI 
     }
 
     private void logAction(String username, String operation, String status) {
-        Logger.log(username, "AuthServices", operation, status);
+        Logger.logAction(username, "AuthServices", operation, status);
     }
 }

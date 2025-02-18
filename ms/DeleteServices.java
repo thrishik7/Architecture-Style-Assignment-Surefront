@@ -76,6 +76,6 @@ public class DeleteServices extends UnicastRemoteObject implements DeleteService
 
     // Simple helper for logging calls
     private void logAction(String user, String operation, String status) {
-        Logger.log(user, "DeleteServices", operation, status);
+        Logger.logAction(user, "DeleteServices", operation, status);
     }
 }

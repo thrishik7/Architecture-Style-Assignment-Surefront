@@ -114,7 +114,7 @@ public class CreateServices extends UnicastRemoteObject implements CreateService
 }
 
 private void logAction(String user, String operation, String status) {
-    Logger.log(user, "CreateServices", operation, status);
+    Logger.logAction(user, "CreateServices", operation, status);
 }
 
 } // RetrieveServices
