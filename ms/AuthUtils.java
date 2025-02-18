@@ -30,11 +30,10 @@ public class AuthUtils {
 
             if (!rs.next()) {
                 return false;
-            }
-            LocalDateTime validUntil = LocalDateTime.parse(
-                rs.getString("valid_until"),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-            );
+            }     
+
+            Timestamp ts = rs.getTimestamp("valid_until");
+            LocalDateTime validUntil = ts.toLocalDateTime();
             return LocalDateTime.now().isBefore(validUntil);
 
         } catch (Exception e) {
